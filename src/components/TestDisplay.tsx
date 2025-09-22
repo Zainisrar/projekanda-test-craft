@@ -148,14 +148,9 @@ export const TestDisplay: React.FC<TestDisplayProps> = ({ testData, onNewTest })
                       >
                         <div className="flex items-center justify-between">
                           <span className="font-medium">{option.text}</span>
-                          <div className="flex items-center space-x-2">
-                            <span className="text-sm text-muted-foreground">
-                              Score: {option.score}
-                            </span>
-                            {isSelected && (
-                              <CheckCircle className="w-4 h-4 text-primary" />
-                            )}
-                          </div>
+                          {isSelected && (
+                            <CheckCircle className="w-4 h-4 text-primary" />
+                          )}
                         </div>
                       </button>
                     );
