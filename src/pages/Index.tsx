@@ -1,13 +1,33 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import React, { useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { AuthForm } from '@/components/AuthForm';
+import { Dashboard } from '@/components/Dashboard';
 
 const Index = () => {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+  const { user, isLoading } = useAuth();
+  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
+
+  const toggleAuthMode = () => {
+    setAuthMode(prev => prev === 'signin' ? 'signup' : 'signin');
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
       </div>
-    </div>
+    );
+  }
+
+  if (user) {
+    return <Dashboard />;
+  }
+
+  return (
+    <AuthForm mode={authMode} onToggleMode={toggleAuthMode} />
   );
 };
 
