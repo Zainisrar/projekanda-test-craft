@@ -46,21 +46,21 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, onToggleMode }) => {
           role: formData.role,
         };
         
-        const response = await api.signup(signupData);
+        await api.signup(signupData);
         
-        // Assuming the API returns user data, otherwise we'll create it from form data
-        const userData = response.user || {
-          id: response.id || Date.now().toString(),
-          name: formData.name,
-          email: formData.email,
-          role: formData.role,
-        };
-        
-        login(userData);
         toast({
           title: 'Account created successfully!',
-          description: 'Welcome to the platform.',
+          description: 'Please sign in with your credentials.',
         });
+        
+        // Clear form and switch to signin mode
+        setFormData({
+          name: '',
+          email: '',
+          password: '',
+          role: '' as 'TVET' | 'ADOF' | '',
+        });
+        onToggleMode();
       } else {
         if (!formData.email || !formData.password) {
           throw new Error('Please fill in all fields');

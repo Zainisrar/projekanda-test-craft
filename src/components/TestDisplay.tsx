@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { GenerateTestResponse } from '@/lib/api';
-import { ArrowLeft, CheckCircle, FileText, RotateCcw } from 'lucide-react';
+import { ArrowLeft, CheckCircle, FileText, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface TestDisplayProps {
@@ -13,6 +13,7 @@ interface TestDisplayProps {
 export const TestDisplay: React.FC<TestDisplayProps> = ({ testData, onNewTest }) => {
   const [selectedAnswers, setSelectedAnswers] = useState<{ [questionIndex: number]: number }>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const { toast } = useToast();
 
   const handleAnswerSelect = (questionIndex: number, optionScore: number) => {
@@ -22,6 +23,18 @@ export const TestDisplay: React.FC<TestDisplayProps> = ({ testData, onNewTest })
       ...prev,
       [questionIndex]: optionScore
     }));
+  };
+
+  const handleNext = () => {
+    if (currentQuestionIndex < testData.questions.length - 1) {
+      setCurrentQuestionIndex(prev => prev + 1);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(prev => prev - 1);
+    }
   };
 
   const handleSubmit = () => {
@@ -69,7 +82,7 @@ export const TestDisplay: React.FC<TestDisplayProps> = ({ testData, onNewTest })
             
             <div className="flex items-center space-x-4">
               <div className="text-sm text-muted-foreground">
-                Document ID: <span className="font-mono">{testData.document_id}</span>
+                Question {currentQuestionIndex + 1} of {testData.questions.length}
               </div>
             </div>
           </div>
@@ -107,65 +120,102 @@ export const TestDisplay: React.FC<TestDisplayProps> = ({ testData, onNewTest })
             )}
           </div>
 
-          {/* Questions */}
-          <div className="space-y-8">
-            {testData.questions.map((question, questionIndex) => (
-              <Card key={questionIndex} className="bg-card/50 border-border/50">
-                <CardHeader>
-                  <CardTitle className="text-lg">
-                    Question {questionIndex + 1}
-                  </CardTitle>
-                  <CardDescription>
-                    Select the option that best describes your response
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {question.options.map((option, optionIndex) => {
-                      const isSelected = selectedAnswers[questionIndex] === option.score;
-                      return (
-                        <button
-                          key={optionIndex}
-                          onClick={() => handleAnswerSelect(questionIndex, option.score)}
-                          disabled={isSubmitted}
-                          className={`w-full p-4 text-left rounded-lg border transition-colors ${
-                            isSelected
-                              ? 'bg-primary/10 border-primary text-primary'
-                              : 'bg-card border-border hover:border-primary/50 text-foreground'
-                          } ${isSubmitted ? 'cursor-default' : 'cursor-pointer'}`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium">{option.text}</span>
-                            <div className="flex items-center space-x-2">
-                              <span className="text-sm text-muted-foreground">
-                                Score: {option.score}
-                              </span>
-                              {isSelected && (
-                                <CheckCircle className="w-4 h-4 text-primary" />
-                              )}
-                            </div>
+          {/* Current Question */}
+          <div className="mb-8">
+            <Card className="bg-card/50 border-border/50">
+              <CardHeader>
+                <CardTitle className="text-lg">
+                  Question {currentQuestionIndex + 1}: {testData.questions[currentQuestionIndex].question}
+                </CardTitle>
+                <CardDescription>
+                  Select the option that best describes your response
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {testData.questions[currentQuestionIndex].options.map((option, optionIndex) => {
+                    const isSelected = selectedAnswers[currentQuestionIndex] === option.score;
+                    return (
+                      <button
+                        key={optionIndex}
+                        onClick={() => handleAnswerSelect(currentQuestionIndex, option.score)}
+                        disabled={isSubmitted}
+                        className={`w-full p-4 text-left rounded-lg border transition-colors ${
+                          isSelected
+                            ? 'bg-primary/10 border-primary text-primary'
+                            : 'bg-card border-border hover:border-primary/50 text-foreground'
+                        } ${isSubmitted ? 'cursor-default' : 'cursor-pointer'}`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium">{option.text}</span>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm text-muted-foreground">
+                              Score: {option.score}
+                            </span>
+                            {isSelected && (
+                              <CheckCircle className="w-4 h-4 text-primary" />
+                            )}
                           </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
-          {/* Submit Section */}
-          <div className="mt-12 text-center">
-            {!isSubmitted ? (
+          {/* Navigation */}
+          {!isSubmitted && (
+            <div className="flex justify-between items-center mb-8">
               <Button
-                onClick={handleSubmit}
-                size="lg"
-                className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 text-lg font-medium"
+                onClick={handlePrevious}
+                disabled={currentQuestionIndex === 0}
+                variant="outline"
+                className="flex items-center space-x-2"
               >
-                <CheckCircle className="mr-3 h-5 w-5" />
-                Submit Test
+                <ChevronLeft className="w-4 h-4" />
+                <span>Previous</span>
               </Button>
-            ) : (
+
+              <div className="flex items-center space-x-2">
+                {testData.questions.map((_, index) => (
+                  <div
+                    key={index}
+                    className={`w-3 h-3 rounded-full ${
+                      index === currentQuestionIndex
+                        ? 'bg-primary'
+                        : selectedAnswers[index] !== undefined
+                        ? 'bg-success'
+                        : 'bg-muted'
+                    }`}
+                  />
+                ))}
+              </div>
+
+              {currentQuestionIndex < testData.questions.length - 1 ? (
+                <Button
+                  onClick={handleNext}
+                  className="flex items-center space-x-2"
+                >
+                  <span>Next</span>
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleSubmit}
+                  className="flex items-center space-x-2 bg-success hover:bg-success/90"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  <span>Submit Test</span>
+                </Button>
+              )}
+            </div>
+          )}
+
+          {/* Submit Section */}
+          {isSubmitted && (
+            <div className="mt-12 text-center">
               <Button
                 onClick={onNewTest}
                 size="lg"
@@ -175,8 +225,8 @@ export const TestDisplay: React.FC<TestDisplayProps> = ({ testData, onNewTest })
                 <RotateCcw className="mr-3 h-5 w-5" />
                 Generate New Test
               </Button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </main>
     </div>

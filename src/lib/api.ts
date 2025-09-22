@@ -13,6 +13,9 @@ export interface SigninData {
 }
 
 export interface TestQuestion {
+  question: string;
+  question_no: number;
+  trait: string;
   options: {
     score: number;
     text: string;
