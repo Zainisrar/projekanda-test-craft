@@ -19,8 +19,34 @@ export const Dashboard: React.FC = () => {
     
     setIsGenerating(true);
     try {
+      // First generate the test
+      console.log('Step 1: Generating test...');
       const testData = await api.generateTest(user.id);
-      setGeneratedTest(testData);
+      console.log('Generated test data:', testData);
+      
+      // Then try to get MCQs from database (this might be required for submit to work)
+      console.log('Step 2: Getting MCQs from database...');
+      try {
+        const mcqsData = await api.getMcqs(user.id);
+        console.log('MCQs data from database:', mcqsData);
+        
+        // Use MCQs data if it has questions, otherwise use generated test data
+        if (mcqsData.questions && mcqsData.questions.length > 0) {
+          console.log('Using MCQs from database');
+          setGeneratedTest({
+            ...testData,
+            ...mcqsData,
+            mcqs_id: mcqsData.mcqs_id || mcqsData.document_id || testData.mcqs_id
+          });
+        } else {
+          console.log('Using generated test data');
+          setGeneratedTest(testData);
+        }
+      } catch (mcqError) {
+        console.warn('Could not get MCQs from database, using generated test:', mcqError);
+        setGeneratedTest(testData);
+      }
+      
       toast({
         title: 'Test Generated Successfully!',
         description: 'Your personalized test is ready.',
@@ -66,7 +92,22 @@ export const Dashboard: React.FC = () => {
   ];
 
   if (generatedTest) {
-    return <TestDisplay testData={generatedTest} onNewTest={handleNewTest} />;
+    if (!user?.id) {
+      console.error('User ID is missing:', user);
+      return (
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <Card>
+            <CardContent className="p-6">
+              <p className="text-destructive">Error: User ID is missing. Please log in again.</p>
+              <Button onClick={logout} className="mt-4">
+                Back to Login
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+    return <TestDisplay testData={generatedTest} onNewTest={handleNewTest} userId={user.id} />;
   }
 
   return (

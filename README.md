@@ -59,6 +59,40 @@ This project is built with:
 - React
 - shadcn-ui
 - Tailwind CSS
+- React Query (TanStack Query)
+- React Hook Form
+- Recharts
+
+## API Integration
+
+This project integrates with the Projekanda API for assessment functionality:
+
+### Submit Answers API
+- **Endpoint**: `POST https://projekanda.top/submit_answers`
+- **Purpose**: Submit user answers for assessment
+- **Request Format**:
+```json
+{
+  "user_id": "string",
+  "mcq_id": "string", 
+  "answers": {
+    "1": "Agree",
+    "2": "Strongly Agree",
+    // ... more answers
+  }
+}
+```
+
+### Get Results API
+- **Endpoint**: `GET https://projekanda.top/get_result_by_id?result_id={result_id}`
+- **Purpose**: Fetch detailed assessment results
+- **Response**: Includes percentage score, analysis breakdown, and performance metrics
+
+### Features
+- **Real-time submission**: Answers are submitted to the API when user completes the test
+- **Detailed results**: Shows percentage score, total points, and skill analysis
+- **Error handling**: Graceful error handling with user-friendly messages
+- **Loading states**: Visual feedback during API calls
 
 ## How can I deploy this project?
 

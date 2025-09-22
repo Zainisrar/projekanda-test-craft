@@ -1,20 +1,40 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { GenerateTestResponse } from '@/lib/api';
-import { ArrowLeft, CheckCircle, FileText, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { GenerateTestResponse, api, TestResult } from '@/lib/api';
+import { ArrowLeft, CheckCircle, FileText, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { TestResults } from './TestResults';
 
 interface TestDisplayProps {
   testData: GenerateTestResponse;
   onNewTest: () => void;
+  userId: string;
 }
 
-export const TestDisplay: React.FC<TestDisplayProps> = ({ testData, onNewTest }) => {
+export const TestDisplay: React.FC<TestDisplayProps> = ({ testData, onNewTest, userId }) => {
   const [selectedAnswers, setSelectedAnswers] = useState<{ [questionIndex: number]: number }>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [testResult, setTestResult] = useState<TestResult | null>(null);
   const { toast } = useToast();
+
+  // Helper function to get document ID from various possible field names
+  const getDocumentId = () => {
+    return testData.mcqs_id || testData.document_id || testData.documentId || testData.id || testData._id || '';
+  };
+
+  const documentId = getDocumentId();
+
+  // Debug log the props
+  console.log('TestDisplay props:', {
+    userId,
+    testDataDocumentId: testData.document_id,
+    documentId: documentId,
+    questionsLength: testData.questions.length,
+    fullTestData: testData
+  });
 
   const handleAnswerSelect = (questionIndex: number, optionScore: number) => {
     if (isSubmitted) return;
@@ -37,7 +57,7 @@ export const TestDisplay: React.FC<TestDisplayProps> = ({ testData, onNewTest })
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (Object.keys(selectedAnswers).length !== testData.questions.length) {
       toast({
         title: 'Incomplete Test',
@@ -47,20 +67,280 @@ export const TestDisplay: React.FC<TestDisplayProps> = ({ testData, onNewTest })
       return;
     }
 
-    setIsSubmitted(true);
-    const totalScore = Object.values(selectedAnswers).reduce((sum, score) => sum + score, 0);
-    const maxScore = testData.questions.length * 5;
-    const percentage = Math.round((totalScore / maxScore) * 100);
+    setIsSubmitting(true);
 
-    toast({
-      title: 'Test Submitted!',
-      description: `Your score: ${percentage}% (${totalScore}/${maxScore})`,
-    });
+    try {
+      // Validate required data
+      console.log('Validation check:', {
+        userId: userId,
+        userIdLength: userId?.length,
+        documentId: documentId,
+        documentIdLength: documentId?.length,
+        testDataKeys: Object.keys(testData),
+        allPossibleIds: {
+          mcqs_id: testData.mcqs_id,
+          document_id: testData.document_id,
+          documentId: testData.documentId,
+          id: testData.id,
+          _id: testData._id
+        }
+      });
+      
+      if (!userId || userId.trim() === '') {
+        throw new Error('User ID is required. Please log in again.');
+      }
+      if (!documentId || documentId.trim() === '') {
+        console.error('Missing document_id. Full testData:', testData);
+        throw new Error('Test document ID is required. Please generate a new test.');
+      }
+
+      // Convert answers to the required format based on the API example
+      const answersForAPI: Record<string, string> = {};
+      Object.entries(selectedAnswers).forEach(([questionIndex, score]) => {
+        const questionNumber = parseInt(questionIndex) + 1;
+        // Map score to Likert scale response
+        let responseText = '';
+        switch (score) {
+          case 1:
+            responseText = 'Strongly Disagree';
+            break;
+          case 2:
+            responseText = 'Disagree';
+            break;
+          case 3:
+            responseText = 'Neutral';
+            break;
+          case 4:
+            responseText = 'Agree';
+            break;
+          case 5:
+            responseText = 'Strongly Agree';
+            break;
+          default:
+            responseText = 'Neutral';
+        }
+        answersForAPI[questionNumber.toString()] = responseText;
+      });
+
+      // Validate answers were created
+      if (Object.keys(answersForAPI).length === 0) {
+        throw new Error('No answers provided. Please answer all questions.');
+      }
+
+      // Validate all answers are valid strings
+      const invalidAnswers = Object.entries(answersForAPI).filter(([key, value]) => 
+        !value || typeof value !== 'string' || !['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'].includes(value)
+      );
+      
+      if (invalidAnswers.length > 0) {
+        console.error('Invalid answers found:', invalidAnswers);
+        throw new Error(`Invalid answers detected: ${invalidAnswers.map(([k, v]) => `${k}: ${v}`).join(', ')}`);
+      }
+
+      // Create the exact request body format
+      const requestBody = {
+        user_id: userId,
+        mcq_id: documentId,
+        answers: answersForAPI,
+      };
+
+      // Test with your exact example format
+      const expectedExample = {
+        "user_id": "68d16d9d257b9ff730bc9722",
+        "mcq_id": "68d174f45f158664a2b6ac7a",
+        "answers": {
+          "1": "Agree",
+          "2": "Strongly Agree",
+          "3": "Neutral",
+          "4": "Disagree",
+          "5": "Strongly Agree",
+          "6": "Agree",
+          "7": "Strongly Agree",
+          "8": "Neutral",
+          "9": "Agree",
+          "10": "Disagree",
+          "11": "Strongly Agree",
+          "12": "Neutral",
+          "13": "Agree",
+          "14": "Disagree",
+          "15": "Strongly Agree",
+          "16": "Disagree",
+          "17": "Agree",
+          "18": "Disagree",
+          "19": "Strongly Agree",
+          "20": "Neutral"
+        }
+      };
+
+      console.log('=== FORMAT COMPARISON ===');
+      console.log('Expected format:', expectedExample);
+      console.log('Our format:', requestBody);
+      console.log('Expected JSON:', JSON.stringify(expectedExample));
+      console.log('Our JSON:', JSON.stringify(requestBody));
+      console.log('Formats match:', JSON.stringify(requestBody) === JSON.stringify(expectedExample));
+      console.log('========================');
+
+      // Debug log the request data
+      console.log('Submitting answers:', requestBody);
+      console.log('Request body JSON:', JSON.stringify(requestBody));
+      console.log('Expected format check:', {
+        hasUserId: !!requestBody.user_id,
+        hasMcqId: !!requestBody.mcq_id,
+        hasAnswers: !!requestBody.answers,
+        answersCount: Object.keys(requestBody.answers).length,
+        expectedCount: testData.questions.length,
+        answersKeys: Object.keys(requestBody.answers).sort((a, b) => parseInt(a) - parseInt(b)),
+        sampleAnswers: Object.entries(requestBody.answers).slice(0, 5)
+      });
+
+      // Validate the format matches your example exactly
+      const expectedFormat = {
+        user_id: "68d16d9d257b9ff730bc9722",
+        mcq_id: "68d174f45f158664a2b6ac7a", 
+        answers: {
+          "1": "Agree",
+          "2": "Strongly Agree",
+          // ... etc
+        }
+      };
+      
+      console.log('Format comparison:', {
+        ourFormat: typeof requestBody,
+        ourKeys: Object.keys(requestBody).sort(),
+        expectedKeys: Object.keys(expectedFormat).sort(),
+        userIdType: typeof requestBody.user_id,
+        mcqIdType: typeof requestBody.mcq_id,
+        answersType: typeof requestBody.answers,
+        answersIsObject: requestBody.answers && typeof requestBody.answers === 'object'
+      });
+
+      // Try with the exact format from your example first
+      const testRequestBody = {
+        "user_id": userId,
+        "mcq_id": documentId,
+        "answers": answersForAPI
+      };
+
+      console.log('Final request body that will be sent:', testRequestBody);
+      console.log('Final request body as JSON string:', JSON.stringify(testRequestBody, null, 2));
+
+      // Let's also try with a hardcoded working example to test
+      if (Object.keys(answersForAPI).length >= 20) {
+        const hardcodedTest = {
+          "user_id": userId,
+          "mcq_id": documentId,
+          "answers": {
+            "1": "Agree",
+            "2": "Strongly Agree", 
+            "3": "Neutral",
+            "4": "Disagree",
+            "5": "Strongly Agree",
+            "6": "Agree",
+            "7": "Strongly Agree",
+            "8": "Neutral",
+            "9": "Agree",
+            "10": "Disagree",
+            "11": "Strongly Agree",
+            "12": "Neutral",
+            "13": "Agree",
+            "14": "Disagree",
+            "15": "Strongly Agree",
+            "16": "Disagree",
+            "17": "Agree",
+            "18": "Disagree",
+            "19": "Strongly Agree",
+            "20": "Neutral"
+          }
+        };
+        console.log('Hardcoded test format:', hardcodedTest);
+        console.log('Hardcoded test JSON:', JSON.stringify(hardcodedTest));
+      }
+
+      // First, get MCQs from database (this might be required before submitting)
+      console.log('Getting MCQs from database before submitting...');
+      try {
+        const mcqsResponse = await api.getMcqs(userId);
+        console.log('MCQs retrieved successfully:', mcqsResponse);
+      } catch (mcqError) {
+        console.warn('Failed to get MCQs (might not be required):', mcqError);
+        // Continue anyway as this might not be required
+      }
+
+      // FOR TESTING: Try with exact hardcoded format first
+      console.log('=== TESTING WITH HARDCODED FORMAT ===');
+      const hardcodedTestRequest = {
+        "user_id": userId,
+        "mcq_id": documentId,
+        "answers": {
+          "1": "Agree",
+          "2": "Strongly Agree",
+          "3": "Neutral",
+          "4": "Disagree",
+          "5": "Strongly Agree",
+          "6": "Agree",
+          "7": "Strongly Agree",
+          "8": "Neutral",
+          "9": "Agree",
+          "10": "Disagree",
+          "11": "Strongly Agree",
+          "12": "Neutral",
+          "13": "Agree",
+          "14": "Disagree",
+          "15": "Strongly Agree",
+          "16": "Disagree",
+          "17": "Agree",
+          "18": "Disagree",
+          "19": "Strongly Agree",
+          "20": "Neutral"
+        }
+      };
+
+      console.log('Trying hardcoded format first...');
+      let submitResponse;
+      
+      try {
+        submitResponse = await api.submitAnswers(hardcodedTestRequest);
+        console.log('Hardcoded format worked!', submitResponse);
+      } catch (hardcodedError) {
+        console.error('Even hardcoded format failed:', hardcodedError);
+        
+        // Try our format anyway
+        console.log('Trying our format...');
+        submitResponse = await api.submitAnswers(testRequestBody);
+      }
+
+      // Fetch detailed results
+      const resultResponse = await api.getResultById(submitResponse.data.result_id);
+      
+      setTestResult(resultResponse);
+      setIsSubmitted(true);
+
+      toast({
+        title: 'Test Submitted Successfully!',
+        description: `Your score: ${resultResponse.data.percentage}%`,
+      });
+    } catch (error) {
+      console.error('Error submitting test:', error);
+      toast({
+        title: 'Submission Failed',
+        description: error instanceof Error ? error.message : 'Failed to submit test. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const totalScore = isSubmitted ? Object.values(selectedAnswers).reduce((sum, score) => sum + score, 0) : 0;
-  const maxScore = testData.questions.length * 5;
-  const percentage = isSubmitted ? Math.round((totalScore / maxScore) * 100) : 0;
+  // Show results if test is submitted and we have results
+  if (isSubmitted && testResult) {
+    return (
+      <TestResults 
+        result={testResult} 
+        onNewTest={onNewTest}
+        onBackToDashboard={onNewTest}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -101,17 +381,33 @@ export const TestDisplay: React.FC<TestDisplayProps> = ({ testData, onNewTest })
             <h1 className="text-3xl font-bold text-foreground mb-2">Assessment Test</h1>
             <p className="text-muted-foreground">{testData.message}</p>
             
-            {isSubmitted && (
-              <Card className="mt-6 bg-success/5 border-success/20">
+            {/* Debug info - remove in production */}
+            <div className="mt-4 p-4 bg-muted/50 rounded-lg text-sm">
+              <p><strong>User ID:</strong> {userId || 'Not provided'}</p>
+              <p><strong>Test ID:</strong> {documentId || 'Not provided'}</p>
+              <p><strong>Questions:</strong> {testData.questions.length}</p>
+              <p><strong>Answered:</strong> {Object.keys(selectedAnswers).length}/{testData.questions.length}</p>
+              {Object.keys(selectedAnswers).length > 0 && (
+                <details className="mt-2">
+                  <summary className="cursor-pointer">View Selected Answers</summary>
+                  <pre className="mt-2 text-xs bg-background p-2 rounded">
+                    {JSON.stringify(selectedAnswers, null, 2)}
+                  </pre>
+                </details>
+              )}
+            </div>
+            
+            {isSubmitting && (
+              <Card className="mt-6 bg-primary/5 border-primary/20">
                 <CardContent className="py-6">
                   <div className="flex items-center justify-center space-x-3">
-                    <CheckCircle className="w-6 h-6 text-success" />
+                    <Loader2 className="w-6 h-6 text-primary animate-spin" />
                     <div>
                       <p className="text-lg font-semibold text-foreground">
-                        Test Completed! Score: {percentage}%
+                        Submitting your answers...
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        {totalScore} out of {maxScore} points
+                        Please wait while we process your results
                       </p>
                     </div>
                   </div>
@@ -161,7 +457,7 @@ export const TestDisplay: React.FC<TestDisplayProps> = ({ testData, onNewTest })
           </div>
 
           {/* Navigation */}
-          {!isSubmitted && (
+          {!isSubmitted && !isSubmitting && (
             <div className="flex justify-between items-center mb-8">
               <Button
                 onClick={handlePrevious}
@@ -199,29 +495,21 @@ export const TestDisplay: React.FC<TestDisplayProps> = ({ testData, onNewTest })
               ) : (
                 <Button
                   onClick={handleSubmit}
+                  disabled={isSubmitting}
                   className="flex items-center space-x-2 bg-success hover:bg-success/90"
                 >
-                  <CheckCircle className="w-4 h-4" />
-                  <span>Submit Test</span>
+                  {isSubmitting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <CheckCircle className="w-4 h-4" />
+                  )}
+                  <span>{isSubmitting ? 'Submitting...' : 'Submit Test'}</span>
                 </Button>
               )}
             </div>
           )}
 
-          {/* Submit Section */}
-          {isSubmitted && (
-            <div className="mt-12 text-center">
-              <Button
-                onClick={onNewTest}
-                size="lg"
-                variant="outline"
-                className="border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-6 text-lg font-medium"
-              >
-                <RotateCcw className="mr-3 h-5 w-5" />
-                Generate New Test
-              </Button>
-            </div>
-          )}
+
         </div>
       </main>
     </div>

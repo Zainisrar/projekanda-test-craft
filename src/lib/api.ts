@@ -23,9 +23,53 @@ export interface TestQuestion {
 }
 
 export interface GenerateTestResponse {
-  document_id: string;
+  mcqs_id?: string;
+  document_id?: string;
+  documentId?: string;
+  id?: string;
+  _id?: string;
   message: string;
   questions: TestQuestion[];
+  trait?: string;
+}
+
+export interface GetMcqsResponse {
+  mcqs_id?: string;
+  document_id?: string;
+  questions: TestQuestion[];
+  message?: string;
+}
+
+export interface SubmitAnswersData {
+  user_id: string;
+  mcq_id: string;
+  answers: Record<string, string>;
+}
+
+export interface SubmitAnswersResponse {
+  data: {
+    analysis: Record<string, string>;
+    max_score: number;
+    mcq_id: string;
+    percentage: number;
+    result_id: string;
+    total_score: number;
+    user_id: string;
+  };
+  message: string;
+}
+
+export interface TestResult {
+  data: {
+    analysis: Record<string, string>;
+    max_score: number;
+    mcq_id: string;
+    percentage: number;
+    result_id: string;
+    total_score: number;
+    user_id: string;
+  };
+  message: string;
 }
 
 export const api = {
@@ -64,6 +108,8 @@ export const api = {
   },
 
   async generateTest(userId: string): Promise<GenerateTestResponse> {
+    console.log('Generating test for user:', userId);
+    
     const response = await fetch(`${API_BASE_URL}/generate_test`, {
       method: 'POST',
       headers: {
@@ -77,6 +123,129 @@ export const api = {
       throw new Error(error || 'Test generation failed');
     }
 
-    return response.json();
+    const result = await response.json();
+    console.log('Generate test API response:', result);
+    return result;
+  },
+
+  async getMcqs(userId: string): Promise<GetMcqsResponse> {
+    console.log('Getting MCQs for user:', userId);
+    
+    const response = await fetch(`${API_BASE_URL}/get_mcqs/${userId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const responseText = await response.text();
+    
+    console.log('=== GET MCQS DEBUG ===');
+    console.log('URL:', `${API_BASE_URL}/get_mcqs/${userId}`);
+    console.log('Status:', response.status);
+    console.log('Response:', responseText);
+    console.log('=====================');
+
+    if (!response.ok) {
+      let errorMessage = 'Failed to get MCQs';
+      try {
+        const errorData = JSON.parse(responseText);
+        errorMessage = errorData.error || errorData.message || errorMessage;
+      } catch {
+        errorMessage = responseText || errorMessage;
+      }
+      throw new Error(errorMessage);
+    }
+
+    try {
+      const result = JSON.parse(responseText);
+      console.log('Get MCQs API response:', result);
+      return result;
+    } catch (error) {
+      console.error('Failed to parse MCQs response:', responseText);
+      throw new Error('Invalid response format from server');
+    }
+  },
+
+  async submitAnswers(data: SubmitAnswersData): Promise<SubmitAnswersResponse> {
+    const url = `${API_BASE_URL}/submit_answers`;
+    const requestBody = JSON.stringify(data);
+    
+    console.log('=== API SUBMIT DEBUG ===');
+    console.log('URL:', url);
+    console.log('Method: POST');
+    console.log('Headers:', { 'Content-Type': 'application/json' });
+    console.log('Request data object:', data);
+    console.log('Request body string:', requestBody);
+    console.log('Request body length:', requestBody.length);
+    console.log('========================');
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: requestBody,
+    });
+
+    // Read the response body once
+    const responseText = await response.text();
+    
+    console.log('=== API RESPONSE DEBUG ===');
+    console.log('Status:', response.status);
+    console.log('Status Text:', response.statusText);
+    console.log('Headers:', Object.fromEntries(response.headers.entries()));
+    console.log('Response body:', responseText);
+    console.log('Response length:', responseText.length);
+    console.log('==========================');
+    
+    if (!response.ok) {
+      let errorMessage = 'Answer submission failed';
+      try {
+        const errorData = JSON.parse(responseText);
+        errorMessage = errorData.error || errorData.message || errorMessage;
+      } catch {
+        errorMessage = responseText || errorMessage;
+      }
+      console.error('API Error Response:', responseText);
+      throw new Error(errorMessage);
+    }
+
+    try {
+      return JSON.parse(responseText);
+    } catch (error) {
+      console.error('Failed to parse response:', responseText);
+      throw new Error('Invalid response format from server');
+    }
+  },
+
+  async getResultById(resultId: string): Promise<TestResult> {
+    const response = await fetch(`${API_BASE_URL}/get_result_by_id?result_id=${resultId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const responseText = await response.text();
+
+    if (!response.ok) {
+      let errorMessage = 'Failed to fetch result';
+      try {
+        const errorData = JSON.parse(responseText);
+        errorMessage = errorData.error || errorData.message || errorMessage;
+      } catch {
+        errorMessage = responseText || errorMessage;
+      }
+      console.error('API Error Response:', responseText);
+      throw new Error(errorMessage);
+    }
+
+    try {
+      return JSON.parse(responseText);
+    } catch (error) {
+      console.error('Failed to parse response:', responseText);
+      throw new Error('Invalid response format from server');
+    }
   },
 };
