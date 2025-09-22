@@ -73,7 +73,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, onToggleMode }) => {
         
         const response = await api.signin(signinData);
         
-        // Assuming the API returns user data
+        // Handle the API response format: { message: "Login successful", user: {...} }
         const userData = response.user || {
           id: response.id || Date.now().toString(),
           name: response.name || 'User',

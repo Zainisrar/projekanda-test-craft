@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthForm } from '@/components/AuthForm';
 import { Dashboard } from '@/components/Dashboard';
+import { ADOFDashboard } from '@/components/ADOFDashboard';
 
 const Index = () => {
   const { user, isLoading } = useAuth();
@@ -23,7 +24,13 @@ const Index = () => {
   }
 
   if (user) {
-    return <Dashboard />;
+    // Role-based routing after login
+    if (user.role === 'ADOF') {
+      return <ADOFDashboard />;
+    } else {
+      // Default to Dashboard for TVET role or any other role
+      return <Dashboard />;
+    }
   }
 
   return (
