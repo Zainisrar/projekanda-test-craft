@@ -146,17 +146,57 @@ export const Dashboard: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-6 py-12">
+      <main className="container mx-auto px-6 py-8">
         <div className="max-w-4xl mx-auto">
-          {/* Welcome Section */}
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-foreground mb-4">
-              Welcome back, {user?.name}!
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Ready to generate your personalized assessment? Our platform creates tailored tests 
-              based on your role and learning objectives.
-            </p>
+          {/* Hero Section with Test Generation */}
+          <div className="text-center mb-16">
+            <div className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-accent/5 to-secondary/10 border border-primary/30 rounded-3xl p-12 mb-8">
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-accent/5 opacity-50"></div>
+              <div className="relative">
+                <div className="flex justify-center mb-8">
+                  <div className="w-24 h-24 bg-gradient-to-br from-primary to-primary/80 rounded-3xl flex items-center justify-center shadow-xl">
+                    <FileText className="w-12 h-12 text-primary-foreground" />
+                  </div>
+                </div>
+                <h2 className="text-5xl font-bold bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent mb-4">
+                  Welcome back, {user?.name}!
+                </h2>
+                <h3 className="text-3xl font-bold text-foreground mb-6">
+                  Generate Your Test
+                </h3>
+                <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-10 leading-relaxed">
+                  Ready to challenge yourself? Create a personalized assessment tailored to your role and expertise level. 
+                  Our AI-powered system generates questions specifically designed for your learning journey.
+                </p>
+                
+                <Button
+                  onClick={handleGenerateTest}
+                  disabled={isGenerating}
+                  size="lg"
+                  className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-primary-foreground px-12 py-8 text-xl font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="mr-4 h-7 w-7 animate-spin" />
+                      Generating Your Test...
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="mr-4 h-7 w-7" />
+                      Start Assessment
+                    </>
+                  )}
+                </Button>
+                
+                {isGenerating && (
+                  <div className="mt-8 p-6 bg-card/50 rounded-xl border border-border/50 max-w-md mx-auto">
+                    <p className="text-base text-muted-foreground">
+                      Creating your personalized assessment... This may take a few moments.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Stats Cards */}
@@ -312,52 +352,6 @@ export const Dashboard: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Test Generation Section */}
-          <Card className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-accent/5 to-secondary/10 border-primary/30">
-            <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-accent/5 opacity-50"></div>
-            <CardHeader className="relative text-center py-8">
-              <div className="flex justify-center mb-6">
-                <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary/80 rounded-3xl flex items-center justify-center shadow-lg">
-                  <FileText className="w-10 h-10 text-primary-foreground" />
-                </div>
-              </div>
-              <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-3">
-                Generate Your Test
-              </CardTitle>
-              <CardDescription className="text-lg text-muted-foreground max-w-lg mx-auto leading-relaxed">
-                Create a personalized assessment tailored to your role and expertise level. 
-                Our AI-powered system will generate questions specifically designed for your learning journey.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="relative text-center pb-8">
-              <Button
-                onClick={handleGenerateTest}
-                disabled={isGenerating}
-                size="lg"
-                className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-primary-foreground px-10 py-6 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="mr-3 h-6 w-6 animate-spin" />
-                    Generating Your Test...
-                  </>
-                ) : (
-                  <>
-                    <FileText className="mr-3 h-6 w-6" />
-                    Start Assessment
-                  </>
-                )}
-              </Button>
-              
-              {isGenerating && (
-                <div className="mt-6 p-4 bg-card/50 rounded-lg border border-border/50 max-w-md mx-auto">
-                  <p className="text-sm text-muted-foreground">
-                    Creating your personalized assessment... This may take a few moments.
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
         </div>
       </main>
     </div>
