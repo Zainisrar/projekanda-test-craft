@@ -313,42 +313,48 @@ export const Dashboard: React.FC = () => {
           </Card>
 
           {/* Test Generation Section */}
-          <Card className="bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20">
-            <CardHeader className="text-center">
-              <div className="flex justify-center mb-4">
-                <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center">
-                  <FileText className="w-8 h-8 text-primary-foreground" />
+          <Card className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-accent/5 to-secondary/10 border-primary/30">
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-accent/5 opacity-50"></div>
+            <CardHeader className="relative text-center py-8">
+              <div className="flex justify-center mb-6">
+                <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary/80 rounded-3xl flex items-center justify-center shadow-lg">
+                  <FileText className="w-10 h-10 text-primary-foreground" />
                 </div>
               </div>
-              <CardTitle className="text-2xl">Generate Your Test</CardTitle>
-              <CardDescription className="text-base max-w-md mx-auto">
-                Create a personalized assessment tailored to your role and expertise level.
+              <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-3">
+                Generate Your Test
+              </CardTitle>
+              <CardDescription className="text-lg text-muted-foreground max-w-lg mx-auto leading-relaxed">
+                Create a personalized assessment tailored to your role and expertise level. 
+                Our AI-powered system will generate questions specifically designed for your learning journey.
               </CardDescription>
             </CardHeader>
-            <CardContent className="text-center">
+            <CardContent className="relative text-center pb-8">
               <Button
                 onClick={handleGenerateTest}
                 disabled={isGenerating}
                 size="lg"
-                className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 text-lg font-medium"
+                className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-primary-foreground px-10 py-6 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
               >
                 {isGenerating ? (
                   <>
-                    <Loader2 className="mr-3 h-5 w-5 animate-spin" />
-                    Generating Test...
+                    <Loader2 className="mr-3 h-6 w-6 animate-spin" />
+                    Generating Your Test...
                   </>
                 ) : (
                   <>
-                    <FileText className="mr-3 h-5 w-5" />
-                    Generate New Test
+                    <FileText className="mr-3 h-6 w-6" />
+                    Start Assessment
                   </>
                 )}
               </Button>
               
               {isGenerating && (
-                <p className="text-sm text-muted-foreground mt-4">
-                  This may take a few moments while we create your personalized assessment...
-                </p>
+                <div className="mt-6 p-4 bg-card/50 rounded-lg border border-border/50 max-w-md mx-auto">
+                  <p className="text-sm text-muted-foreground">
+                    Creating your personalized assessment... This may take a few moments.
+                  </p>
+                </div>
               )}
             </CardContent>
           </Card>

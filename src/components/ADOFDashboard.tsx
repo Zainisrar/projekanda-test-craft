@@ -13,8 +13,10 @@ type ADOFStep = 'jobs' | 'cv' | 'test' | 'report';
 interface SelectedJob {
   id: string;
   title: string;
+  company: string;
   description: string;
   requirements: string[];
+  skills: string[];
 }
 
 interface CVData {
