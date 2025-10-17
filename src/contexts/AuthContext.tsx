@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { safeParseLocalStorage, localStorageValidators } from '@/lib/utils';
 
 interface User {
   id: string;
@@ -35,13 +36,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     // Check for stored auth data on app load
-    const storedUser = localStorage.getItem('auth_user');
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        localStorage.removeItem('auth_user');
-      }
+    const user = safeParseLocalStorage('auth_user', localStorageValidators.user);
+    if (user) {
+      setUser(user);
     }
     setIsLoading(false);
   }, []);

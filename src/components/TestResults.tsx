@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { TestResult, api } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+import { safeParseLocalStorage, localStorageValidators } from '@/lib/utils';
 import { Trophy, BarChart3, ArrowLeft, RotateCcw } from 'lucide-react';
 
 interface TestResultsProps {
@@ -32,14 +33,9 @@ export const TestResults: React.FC<TestResultsProps> = ({
 
   // Load recommendations from localStorage on mount
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem('recommended_courses');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        setLocalStorageRecommendations(parsed);
-      }
-    } catch (error) {
-      console.warn('Failed to load recommendations from localStorage:', error);
+    const recommendations = safeParseLocalStorage('recommended_courses', localStorageValidators.recommendCourses);
+    if (recommendations) {
+      setLocalStorageRecommendations(recommendations);
     }
   }, []);
 

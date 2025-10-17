@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { api, GenerateTestResponse, RecommendCoursesResponse } from '@/lib/api';
+import { safeParseLocalStorage, localStorageValidators } from '@/lib/utils';
 import { LogOut, User, BookOpen, FileText, Loader2, CheckCircle, TrendingUp, Users, Award, Clock } from 'lucide-react';
 import { TestDisplay } from './TestDisplay';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
@@ -18,16 +19,11 @@ export const Dashboard: React.FC = () => {
 
   // Load recommendations from localStorage on mount
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem('recommended_courses');
+    const recommendations = safeParseLocalStorage('recommended_courses', localStorageValidators.recommendCourses);
+    if (recommendations) {
+      setRecommendedCourses(recommendations);
       const timestamp = localStorage.getItem('recommended_courses_timestamp');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        setRecommendedCourses(parsed);
-        setRecommendationsTimestamp(timestamp);
-      }
-    } catch (error) {
-      console.warn('Failed to load recommendations from localStorage:', error);
+      setRecommendationsTimestamp(timestamp);
     }
   }, []);
 
