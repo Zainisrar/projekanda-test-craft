@@ -5,6 +5,7 @@ import { GenerateTestResponse, api, TestResult } from '@/lib/api';
 import { ArrowLeft, CheckCircle, FileText, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { TestResults } from './TestResults';
+import { RecommendCoursesResponse } from '@/lib/api';
 
 interface TestDisplayProps {
   testData: GenerateTestResponse;
@@ -18,6 +19,10 @@ export const TestDisplay: React.FC<TestDisplayProps> = ({ testData, onNewTest, u
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [testResult, setTestResult] = useState<TestResult | null>(null);
+  const [recommendedCourses, setRecommendedCourses] = useState<RecommendCoursesResponse | null>(null);
+  const [isDownloadingReport, setIsDownloadingReport] = useState(false);
+  const [recommendedLoading, setRecommendedLoading] = useState(false);
+  const [recommendedError, setRecommendedError] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Helper function to get document ID from various possible field names
@@ -309,10 +314,49 @@ export const TestDisplay: React.FC<TestDisplayProps> = ({ testData, onNewTest, u
         submitResponse = await api.submitAnswers(testRequestBody);
       }
 
+      // Persist result_id for report generation and cross-page usage
+      if (submitResponse?.data?.result_id) {
+        try {
+          const resultId = submitResponse.data.result_id;
+          sessionStorage.setItem('lastResultId', resultId);
+          if (userId) {
+            sessionStorage.setItem(`resultId_${userId}`, resultId);
+          }
+        } catch (e) {
+          console.warn('Failed to persist result_id to sessionStorage', e);
+        }
+      }
+
       // Fetch detailed results
       const resultResponse = await api.getResultById(submitResponse.data.result_id);
       
       setTestResult(resultResponse);
+      // After getting the result, call recommend-courses with a single, idempotent request
+      try {
+        // prepare body using percentage and interested_field from localStorage
+        const interestedField = localStorage.getItem('interested_field') || 'agriculture';
+        const recBody = {
+          score: resultResponse.data.percentage,
+          interested_field: interestedField
+        };
+
+        console.log('Requesting recommended courses with:', recBody);
+        setRecommendedLoading(true);
+        setRecommendedError(null);
+
+        const recResponse = await api.recommendCourses(recBody.score, recBody.interested_field);
+        console.log('Recommend courses response:', recResponse);
+        setRecommendedCourses(recResponse);
+        
+        // Store recommendations in localStorage for persistence
+        localStorage.setItem('recommended_courses', JSON.stringify(recResponse));
+        localStorage.setItem('recommended_courses_timestamp', new Date().toISOString());
+      } catch (recErr) {
+        console.error('Error fetching recommended courses:', recErr);
+        setRecommendedError(recErr instanceof Error ? recErr.message : String(recErr));
+      } finally {
+        setRecommendedLoading(false);
+      }
       setIsSubmitted(true);
 
       toast({
@@ -331,6 +375,38 @@ export const TestDisplay: React.FC<TestDisplayProps> = ({ testData, onNewTest, u
     }
   };
 
+  const handleDownloadReport = async () => {
+    const resultId = testResult?.data?.result_id || sessionStorage.getItem('lastResultId') || (userId ? sessionStorage.getItem(`resultId_${userId}`) : null);
+    if (!resultId) {
+      toast({
+        title: 'Report Unavailable',
+        description: 'No result ID available for report generation.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setIsDownloadingReport(true);
+    try {
+      const blob = await api.downloadReport(resultId);
+      const timestamp = new Date().toISOString().slice(0, 10);
+      const filename = `personality_report_${timestamp}.pdf`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast({ title: 'Report Downloaded', description: 'The PDF was downloaded successfully.' });
+    } catch (error: any) {
+      console.error('Failed to download report:', error);
+      toast({ title: 'Download Failed', description: error?.message || 'Unable to download report.', variant: 'destructive' });
+    } finally {
+      setIsDownloadingReport(false);
+    }
+  };
+
   // Show results if test is submitted and we have results
   if (isSubmitted && testResult) {
     return (
@@ -338,6 +414,9 @@ export const TestDisplay: React.FC<TestDisplayProps> = ({ testData, onNewTest, u
         result={testResult} 
         onNewTest={onNewTest}
         onBackToDashboard={onNewTest}
+        recommendedCourses={recommendedCourses}
+        recommendedLoading={recommendedLoading}
+        recommendedError={recommendedError}
       />
     );
   }
@@ -397,7 +476,7 @@ export const TestDisplay: React.FC<TestDisplayProps> = ({ testData, onNewTest, u
               )}
             </div>
             
-            {isSubmitting && (
+              {isSubmitting && (
               <Card className="mt-6 bg-primary/5 border-primary/20">
                 <CardContent className="py-6">
                   <div className="flex items-center justify-center space-x-3">
@@ -509,7 +588,12 @@ export const TestDisplay: React.FC<TestDisplayProps> = ({ testData, onNewTest, u
             </div>
           )}
 
-
+          {/* Quick download access when a prior result exists */}
+          <div className="flex justify-end">
+            <Button onClick={handleDownloadReport} disabled={isDownloadingReport} variant="outline">
+              {isDownloadingReport ? 'Generating Report…' : 'Download Personality Report'}
+            </Button>
+          </div>
         </div>
       </main>
     </div>

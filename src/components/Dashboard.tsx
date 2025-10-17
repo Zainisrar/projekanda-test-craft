@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { api, GenerateTestResponse } from '@/lib/api';
+import { api, GenerateTestResponse, RecommendCoursesResponse } from '@/lib/api';
 import { LogOut, User, BookOpen, FileText, Loader2, CheckCircle, TrendingUp, Users, Award, Clock } from 'lucide-react';
 import { TestDisplay } from './TestDisplay';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
@@ -13,6 +13,23 @@ export const Dashboard: React.FC = () => {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedTest, setGeneratedTest] = useState<GenerateTestResponse | null>(null);
+  const [recommendedCourses, setRecommendedCourses] = useState<RecommendCoursesResponse | null>(null);
+  const [recommendationsTimestamp, setRecommendationsTimestamp] = useState<string | null>(null);
+
+  // Load recommendations from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('recommended_courses');
+      const timestamp = localStorage.getItem('recommended_courses_timestamp');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setRecommendedCourses(parsed);
+        setRecommendationsTimestamp(timestamp);
+      }
+    } catch (error) {
+      console.warn('Failed to load recommendations from localStorage:', error);
+    }
+  }, []);
 
   const handleGenerateTest = async () => {
     if (!user) return;
@@ -253,6 +270,68 @@ export const Dashboard: React.FC = () => {
               </CardContent>
             </Card>
           </div>
+
+          {/* Recommended Courses Section */}
+          {recommendedCourses && recommendedCourses.data && (
+            <Card className="mb-8 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <BookOpen className="w-5 h-5" />
+                  <span>Recommended Courses</span>
+                </CardTitle>
+                <CardDescription>
+                  Based on your test results and interests
+                  {recommendationsTimestamp && (
+                    <span className="block text-xs text-muted-foreground mt-1">
+                      Last updated: {new Date(recommendationsTimestamp).toLocaleString()}
+                    </span>
+                  )}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4">
+                  {recommendedCourses.data.courses.map((course) => (
+                    <div key={course.code} className="p-4 bg-card/50 rounded-lg border border-border/50">
+                      <div className="flex items-start justify-between">
+                        <div className="max-w-[70%]">
+                          <h3 className="font-semibold text-foreground">{course.name}</h3>
+                          <p className="text-sm text-muted-foreground mt-1">{course.description}</p>
+                        </div>
+                        <div className="text-xs text-muted-foreground ml-4">
+                          <div className="font-mono bg-background px-3 py-1 rounded border">{course.code}</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {!recommendedCourses && (
+            <Card className="mb-8 bg-muted/20 border-dashed">
+              <CardContent className="py-8 text-center">
+                <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-foreground mb-2">No Course Recommendations Yet</h3>
+                <p className="text-muted-foreground mb-4">
+                  Take a personality test to get personalized course recommendations based on your interests and results.
+                </p>
+                <Button onClick={handleGenerateTest} disabled={isGenerating} className="mt-2">
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generating Test...
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="mr-2 h-4 w-4" />
+                      Start Assessment
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Charts Section */}
           <div className="grid lg:grid-cols-2 gap-8 mb-12">

@@ -46,6 +46,7 @@ export const ADOFTestDisplay: React.FC<ADOFTestDisplayProps> = ({
   const [selectedAnswers, setSelectedAnswers] = useState<{ [questionIndex: number]: number }>({});
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDownloadingReport, setIsDownloadingReport] = useState(false);
 
   useEffect(() => {
     generateTest();
@@ -158,6 +159,19 @@ export const ADOFTestDisplay: React.FC<ADOFTestDisplayProps> = ({
       console.log('Submitting ADOF test answers:', requestBody);
 
       const submitResponse = await api.submitAnswers(requestBody);
+      // Persist result_id for report generation and cross-page usage
+      if (submitResponse?.data?.result_id) {
+        try {
+          const resultId = submitResponse.data.result_id;
+          sessionStorage.setItem('lastResultId', resultId);
+          if (userId) {
+            sessionStorage.setItem(`resultId_${userId}`, resultId);
+          }
+        } catch (e) {
+          console.warn('Failed to persist result_id to sessionStorage', e);
+        }
+      }
+
       const resultResponse = await api.getResultById(submitResponse.data.result_id);
       
       toast({
@@ -175,6 +189,48 @@ export const ADOFTestDisplay: React.FC<ADOFTestDisplayProps> = ({
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const getStoredResultId = (): string | null => {
+    try {
+      const byUser = userId ? sessionStorage.getItem(`resultId_${userId}`) : null;
+      const last = sessionStorage.getItem('lastResultId');
+      return byUser || last;
+    } catch {
+      return null;
+    }
+  };
+
+  const handleDownloadReport = async () => {
+    const resultId = getStoredResultId();
+    if (!resultId) {
+      toast({
+        title: 'Report Unavailable',
+        description: 'No recent result found. Complete an assessment first.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setIsDownloadingReport(true);
+    try {
+      const blob = await api.downloadReport(resultId);
+      const timestamp = new Date().toISOString().slice(0, 10);
+      const filename = `personality_report_${timestamp}.pdf`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast({ title: 'Report Downloaded', description: 'The PDF was downloaded successfully.' });
+    } catch (error: any) {
+      console.error('Report download failed:', error);
+      toast({ title: 'Download Failed', description: error?.message || 'Unable to download report.', variant: 'destructive' });
+    } finally {
+      setIsDownloadingReport(false);
     }
   };
 
@@ -394,11 +450,14 @@ export const ADOFTestDisplay: React.FC<ADOFTestDisplayProps> = ({
         </div>
       )}
 
-      {/* Back Button */}
-      <div className="flex justify-start">
+      {/* Actions */}
+      <div className="flex justify-between items-center">
         <Button variant="ghost" onClick={onBack} disabled={isSubmitting}>
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to CV Submission
+        </Button>
+        <Button onClick={handleDownloadReport} disabled={isDownloadingReport}>
+          {isDownloadingReport ? 'Generating Report…' : 'Download Personality Report'}
         </Button>
       </div>
     </div>

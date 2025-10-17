@@ -5,6 +5,7 @@ interface User {
   name: string;
   email: string;
   role: 'TVET' | 'ADOF';
+  interested_field?: string;
 }
 
 interface AuthContextType {
@@ -46,13 +47,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const login = (userData: User) => {
-    setUser(userData);
-    localStorage.setItem('auth_user', JSON.stringify(userData));
+    // Load interested_field from localStorage if available
+    const interestedField = localStorage.getItem('interested_field');
+    const userWithInterests = interestedField ? { ...userData, interested_field: interestedField } : userData;
+    
+    setUser(userWithInterests);
+    localStorage.setItem('auth_user', JSON.stringify(userWithInterests));
   };
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem('auth_user');
+    localStorage.removeItem('interested_field');
+    localStorage.removeItem('recommended_courses');
+    localStorage.removeItem('recommended_courses_timestamp');
   };
 
   const value = {

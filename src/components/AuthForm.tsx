@@ -20,6 +20,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, onToggleMode }) => {
     email: '',
     password: '',
     role: '' as 'TVET' | 'ADOF' | '',
+    interested_field: '',
   });
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
@@ -39,14 +40,25 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, onToggleMode }) => {
           throw new Error('Please fill in all fields');
         }
         
+        // For TVET users, interested_field is required
+        if (formData.role === 'TVET' && !formData.interested_field) {
+          throw new Error('Please select your field of interest');
+        }
+        
         const signupData: SignupData = {
           name: formData.name,
           email: formData.email,
           password: formData.password,
           role: formData.role,
+          interested_field: formData.interested_field,
         };
         
         await api.signup(signupData);
+        
+        // Store interested_field in localStorage for TVET users
+        if (formData.role === 'TVET' && formData.interested_field) {
+          localStorage.setItem('interested_field', formData.interested_field);
+        }
         
         toast({
           title: 'Account created successfully!',
@@ -59,6 +71,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, onToggleMode }) => {
           email: '',
           password: '',
           role: '' as 'TVET' | 'ADOF' | '',
+          interested_field: '',
         });
         onToggleMode();
       } else {
@@ -178,6 +191,24 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, onToggleMode }) => {
                   <SelectContent>
                     <SelectItem value="TVET">TVET (Technical & Vocational Education)</SelectItem>
                     <SelectItem value="ADOF">ADOF (Administrative Officer)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            
+            {mode === 'signup' && formData.role === 'TVET' && (
+              <div className="space-y-2">
+                <Label htmlFor="interested_field" className="text-foreground">Field of Interest</Label>
+                <Select onValueChange={(value) => handleInputChange('interested_field', value)}>
+                  <SelectTrigger className="bg-input/50 border-border/50 focus:border-primary">
+                    <SelectValue placeholder="Select your field of interest" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="agriculture">Agriculture</SelectItem>
+                    <SelectItem value="engineering">Engineering</SelectItem>
+                    <SelectItem value="technology">Technology</SelectItem>
+                    <SelectItem value="healthcare">Healthcare</SelectItem>
+                    <SelectItem value="business">Business</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

@@ -1,24 +1,50 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { TestResult } from '@/lib/api';
+import { TestResult, api } from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
 import { Trophy, BarChart3, ArrowLeft, RotateCcw } from 'lucide-react';
 
 interface TestResultsProps {
   result: TestResult;
   onNewTest: () => void;
   onBackToDashboard: () => void;
+  recommendedCourses?: import('@/lib/api').RecommendCoursesResponse | null;
+  recommendedLoading?: boolean;
+  recommendedError?: string | null;
 }
 
 export const TestResults: React.FC<TestResultsProps> = ({ 
   result, 
   onNewTest, 
   onBackToDashboard 
+  , recommendedCourses = null
+  , recommendedLoading = false
+  , recommendedError = null
 }) => {
   const { data } = result;
   const { percentage, total_score, max_score, analysis } = data;
+  const [isDownloadingReport, setIsDownloadingReport] = useState(false);
+  const [localStorageRecommendations, setLocalStorageRecommendations] = useState<import('@/lib/api').RecommendCoursesResponse | null>(null);
+  const { toast } = useToast();
+
+  // Load recommendations from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('recommended_courses');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setLocalStorageRecommendations(parsed);
+      }
+    } catch (error) {
+      console.warn('Failed to load recommendations from localStorage:', error);
+    }
+  }, []);
+
+  // Use props if available, otherwise fall back to localStorage
+  const displayRecommendations = recommendedCourses || localStorageRecommendations;
 
   const getScoreColor = (percentage: number) => {
     if (percentage >= 80) return 'text-green-600';
@@ -30,6 +56,42 @@ export const TestResults: React.FC<TestResultsProps> = ({
     if (percentage >= 80) return 'default';
     if (percentage >= 60) return 'secondary';
     return 'destructive';
+  };
+
+  const handleDownloadReport = async () => {
+    const resultId = result?.data?.result_id;
+    if (!resultId) {
+      toast({
+        title: 'Report Unavailable',
+        description: 'No result ID available for report generation.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setIsDownloadingReport(true);
+    try {
+      const blob = await api.downloadReport(resultId);
+      const timestamp = new Date().toISOString().slice(0, 10);
+      const filename = `personality_report_${timestamp}.pdf`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast({ title: 'Report Downloaded', description: 'The PDF was downloaded successfully.' });
+    } catch (error: any) {
+      console.error('Failed to download report:', error);
+      toast({
+        title: 'Download Failed',
+        description: error?.message || 'Unable to download report.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDownloadingReport(false);
+    }
   };
 
   return (
@@ -132,7 +194,65 @@ export const TestResults: React.FC<TestResultsProps> = ({
           )}
 
           {/* Action Buttons */}
+          {/* Recommended Courses Section */}
+          {recommendedLoading && (
+            <Card className="mb-8">
+              <CardContent>
+                <div className="flex items-center justify-center space-x-3 py-6">
+                  <div className="w-6 h-6 rounded-full border-4 border-primary animate-spin" />
+                  <div className="text-sm text-muted-foreground">Loading recommended courses...</div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {recommendedError && (
+            <Card className="mb-8 border-destructive">
+              <CardContent>
+                <div className="text-sm text-destructive">{recommendedError}</div>
+              </CardContent>
+            </Card>
+          )}
+
+          {displayRecommendations && displayRecommendations.data && (
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <BarChart3 className="w-5 h-5" />
+                  <span>Recommended Courses</span>
+                </CardTitle>
+                <CardDescription>
+                  Based on your score and interests, here are some suggested courses
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4">
+                  {displayRecommendations.data.courses.map((course) => (
+                    <div key={course.code} className="p-4 bg-muted/50 rounded-lg">
+                      <div className="flex items-start justify-between">
+                        <div className="max-w-[70%]">
+                          <h3 className="font-semibold text-foreground">{course.name}</h3>
+                          <p className="text-sm text-muted-foreground mt-1">{course.description}</p>
+                        </div>
+                        <div className="text-xs text-muted-foreground ml-4">
+                          <div className="font-mono bg-background px-3 py-1 rounded">{course.code}</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button
+              onClick={handleDownloadReport}
+              size="lg"
+              disabled={isDownloadingReport}
+              className="px-8 py-6 text-lg font-medium"
+            >
+              {isDownloadingReport ? 'Generating Report…' : 'Download Personality Report'}
+            </Button>
             <Button
               onClick={onNewTest}
               size="lg"

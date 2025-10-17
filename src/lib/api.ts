@@ -5,6 +5,7 @@ export interface SignupData {
   email: string;
   password: string;
   role: 'TVET' | 'ADOF';
+  interested_field?: string;
 }
 
 export interface SigninData {
@@ -57,6 +58,28 @@ export interface SubmitAnswersResponse {
     user_id: string;
   };
   message: string;
+}
+
+export interface RecommendCoursesBody {
+  score: number;
+  interested_field: string;
+}
+
+export interface CourseItem {
+  code: string;
+  description: string;
+  name: string;
+}
+
+export interface RecommendCoursesResponse {
+  data: {
+    courses: CourseItem[];
+    user_input: {
+      interested_field: string;
+      score: number;
+    };
+  };
+  status: string;
 }
 
 export interface TestResult {
@@ -247,5 +270,40 @@ export const api = {
       console.error('Failed to parse response:', responseText);
       throw new Error('Invalid response format from server');
     }
+  },
+  
+  async downloadReport(resultId: string): Promise<Blob> {
+    if (!resultId?.trim()) {
+      throw new Error('Valid result ID is required');
+    }
+    const response = await fetch(`${API_BASE_URL}/generate-report`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ result_id: resultId })
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Report generation failed: ${errorText || response.statusText}`);
+    }
+    return await response.blob();
+  },
+
+  async recommendCourses(score: number, interested_field: string): Promise<RecommendCoursesResponse> {
+    const response = await fetch(`${API_BASE_URL}/recommend-courses`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ score, interested_field }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Course recommendation failed: ${errorText || response.statusText}`);
+    }
+
+    return await response.json();
   },
 };
