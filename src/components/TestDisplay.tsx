@@ -588,12 +588,6 @@ export const TestDisplay: React.FC<TestDisplayProps> = ({ testData, onNewTest, u
             </div>
           )}
 
-          {/* Quick download access when a prior result exists */}
-          <div className="flex justify-end">
-            <Button onClick={handleDownloadReport} disabled={isDownloadingReport} variant="outline">
-              {isDownloadingReport ? 'Generating Report…' : 'Download Personality Report'}
-            </Button>
-          </div>
         </div>
       </main>
     </div>

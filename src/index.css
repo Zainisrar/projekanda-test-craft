@@ -116,3 +116,47 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  /* Professional sticky table headers */
+  .sticky-table-container {
+    position: relative;
+  }
+  
+  .sticky-header {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+  }
+  
+  .sticky-cell {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: hsl(var(--muted) / 0.98) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    font-weight: 700;
+    font-size: 0.875rem;
+    letter-spacing: 0.025em;
+    text-transform: uppercase;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Prevent header from moving on hover */
+  .sticky-header tr {
+    background: transparent !important;
+  }
+  
+  .sticky-header tr:hover {
+    background: transparent !important;
+  }
+  
+  table tbody tr {
+    transition: background-color 0.15s ease;
+  }
+  
+  table tbody tr:hover {
+    background: hsl(var(--muted) / 0.5) !important;
+  }
+}

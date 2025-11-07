@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthForm } from '@/components/AuthForm';
 import { Dashboard } from '@/components/Dashboard';
@@ -25,7 +26,10 @@ const Index = () => {
 
   if (user) {
     // Role-based routing after login
-    if (user.role === 'ADOF') {
+    if (user.role === 'ADMIN') {
+      // Redirect to admin dashboard using React Router
+      return <Navigate to="/admin/dashboard" replace />;
+    } else if (user.role === 'ADOF') {
       return <ADOFDashboard />;
     } else {
       // Default to Dashboard for TVET role or any other role

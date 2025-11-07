@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
-import { LogOut, User, BookOpen, Briefcase, FileText, ClipboardCheck, BarChart3 } from 'lucide-react';
+import { SubmitTestResultResponse } from '@/lib/api';
+import { LogOut, User, BookOpen, Briefcase, FileText, ClipboardCheck, BarChart3, Home, Brain } from 'lucide-react';
 import { JobSelection } from './adof/JobSelection';
 import { CVCollection } from './adof/CVCollection';
 import { ADOFTestDisplay } from './adof/ADOFTestDisplay';
 import { ADOFReports } from './adof/ADOFReports';
 
-type ADOFStep = 'jobs' | 'cv' | 'test' | 'report';
+type ADOFStep = 'jobs' | 'cv' | 'academic-test' | 'personality-test' | 'report';
 
 interface SelectedJob {
   id: string;
@@ -17,6 +19,7 @@ interface SelectedJob {
   description: string;
   requirements: string[];
   skills: string[];
+  test_ids?: string[];
 }
 
 interface CVData {
@@ -31,10 +34,18 @@ interface CVData {
 
 export const ADOFDashboard: React.FC = () => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState<ADOFStep>('jobs');
   const [selectedJob, setSelectedJob] = useState<SelectedJob | null>(null);
   const [cvData, setCvData] = useState<CVData | null>(null);
-  const [testResults, setTestResults] = useState<any>(null);
+  const [academicTestResults, setAcademicTestResults] = useState<SubmitTestResultResponse | null>(null);
+  const [personalityTestResults, setPersonalityTestResults] = useState<SubmitTestResultResponse | null>(null);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
 
   const handleJobSelect = (job: SelectedJob) => {
     setSelectedJob(job);
@@ -43,55 +54,69 @@ export const ADOFDashboard: React.FC = () => {
 
   const handleCVSubmit = (data: CVData) => {
     setCvData(data);
-    setCurrentStep('test');
+    setCurrentStep('academic-test');
   };
 
-  const handleTestComplete = (results: any) => {
-    setTestResults(results);
-    setCurrentStep('report');
+  const handleAcademicTestComplete = (results: SubmitTestResultResponse) => {
+    setAcademicTestResults(results);
+    setCurrentStep('personality-test');
+  };
+
+  const handlePersonalityTestComplete = async (results: SubmitTestResultResponse) => {
+    setPersonalityTestResults(results);
+    setIsGeneratingReport(true);
+    
+    // Brief delay to show "Generating Report" state for better UX
+    setTimeout(() => {
+      setIsGeneratingReport(false);
+      setCurrentStep('report');
+    }, 1500);
   };
 
   const handleBackToJobs = () => {
     setCurrentStep('jobs');
     setSelectedJob(null);
     setCvData(null);
-    setTestResults(null);
+    setAcademicTestResults(null);
+    setPersonalityTestResults(null);
   };
 
   const renderStepIndicator = () => {
     const steps = [
-      { key: 'jobs', label: 'Select Job', icon: Briefcase },
-      { key: 'cv', label: 'Submit CV', icon: FileText },
-      { key: 'test', label: 'Take Test', icon: ClipboardCheck },
-      { key: 'report', label: 'View Report', icon: BarChart3 },
+      { key: 'jobs' as ADOFStep, label: 'Select Job', icon: Briefcase },
+      { key: 'cv' as ADOFStep, label: 'Submit CV', icon: FileText },
+      { key: 'academic-test' as ADOFStep, label: 'Academic Test', icon: BookOpen },
+      { key: 'personality-test' as ADOFStep, label: 'Personality Test', icon: Brain },
+      { key: 'report' as ADOFStep, label: 'View Report', icon: BarChart3 },
     ];
 
     return (
-      <div className="flex justify-center mb-8">
-        <div className="flex items-center space-x-4">
+      <div className="flex justify-center mb-8 overflow-x-auto">
+        <div className="flex items-center space-x-2 md:space-x-4 px-4">
           {steps.map((step, index) => {
             const Icon = step.icon;
             const isActive = currentStep === step.key;
             const isCompleted = 
               (step.key === 'jobs' && selectedJob) ||
               (step.key === 'cv' && cvData) ||
-              (step.key === 'test' && testResults) ||
-              (step.key === 'report' && testResults);
+              (step.key === 'academic-test' && academicTestResults) ||
+              (step.key === 'personality-test' && personalityTestResults) ||
+              (step.key === 'report' && academicTestResults && personalityTestResults);
             
             return (
-              <div key={step.key} className="flex items-center">
-                <div className={`flex items-center space-x-2 px-4 py-2 rounded-lg ${
-                  isActive 
+              <div key={step.key} className="flex items-center flex-shrink-0">
+                <div className={`flex items-center space-x-2 px-3 py-2 rounded-lg ${
+                  isCompleted 
+                    ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-100' 
+                    : isActive 
                     ? 'bg-primary text-primary-foreground' 
-                    : isCompleted 
-                    ? 'bg-green-100 text-green-700' 
                     : 'bg-muted text-muted-foreground'
                 }`}>
                   <Icon className="w-4 h-4" />
-                  <span className="text-sm font-medium">{step.label}</span>
+                  <span className="text-xs md:text-sm font-medium whitespace-nowrap">{step.label}</span>
                 </div>
                 {index < steps.length - 1 && (
-                  <div className="w-8 h-px bg-border mx-2" />
+                  <div className="w-4 md:w-8 h-px bg-border mx-1 md:mx-2" />
                 )}
               </div>
             );
@@ -102,6 +127,37 @@ export const ADOFDashboard: React.FC = () => {
   };
 
   const renderCurrentStep = () => {
+    // Show generating report state
+    if (isGeneratingReport) {
+      return (
+        <div className="space-y-6">
+          <Card className="border-primary/20">
+            <CardContent className="py-16">
+              <div className="flex flex-col items-center justify-center space-y-6">
+                <div className="relative">
+                  <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center animate-pulse">
+                    <BarChart3 className="w-10 h-10 text-primary" />
+                  </div>
+                  <div className="absolute inset-0 border-4 border-primary/30 rounded-full animate-ping" />
+                </div>
+                <div className="text-center space-y-2">
+                  <h3 className="text-2xl font-bold text-foreground">Generating Your Report</h3>
+                  <p className="text-muted-foreground max-w-md">
+                    Analyzing your assessment results and generating comprehensive insights...
+                  </p>
+                </div>
+                <div className="flex items-center space-x-2 text-primary">
+                  <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
     switch (currentStep) {
       case 'jobs':
         return <JobSelection onJobSelect={handleJobSelect} />;
@@ -113,14 +169,26 @@ export const ADOFDashboard: React.FC = () => {
             onBack={() => setCurrentStep('jobs')}
           />
         );
-      case 'test':
+      case 'academic-test':
         return (
           <ADOFTestDisplay 
             selectedJob={selectedJob!}
             cvData={cvData!}
             userId={user?.id || ''}
-            onTestComplete={handleTestComplete}
+            testType="academic"
+            onTestComplete={handleAcademicTestComplete}
             onBack={() => setCurrentStep('cv')}
+          />
+        );
+      case 'personality-test':
+        return (
+          <ADOFTestDisplay 
+            selectedJob={selectedJob!}
+            cvData={cvData!}
+            userId={user?.id || ''}
+            testType="personality"
+            onTestComplete={handlePersonalityTestComplete}
+            onBack={() => setCurrentStep('academic-test')}
           />
         );
       case 'report':
@@ -128,7 +196,8 @@ export const ADOFDashboard: React.FC = () => {
           <ADOFReports 
             selectedJob={selectedJob!}
             cvData={cvData!}
-            testResults={testResults}
+            academicTestResults={academicTestResults}
+            personalityTestResults={personalityTestResults}
             onBackToJobs={handleBackToJobs}
           />
         );
@@ -161,7 +230,7 @@ export const ADOFDashboard: React.FC = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={logout}
+                onClick={handleLogout}
                 className="text-muted-foreground hover:text-foreground"
               >
                 <LogOut className="w-4 h-4 mr-2" />

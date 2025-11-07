@@ -7,7 +7,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { api, SignupData, SigninData } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { sanitizeInput, isValidEmail } from '@/lib/utils';
 import { Loader2, GraduationCap } from 'lucide-react';
+
+const TVET_INTEREST_FIELDS = [
+  { value: 'agriculture', label: 'Agriculture' },
+  { value: 'engineering', label: 'Engineering' },
+  { value: 'technology', label: 'Technology' },
+  { value: 'healthcare', label: 'Healthcare' },
+  { value: 'business', label: 'Business' },
+] as const;
 
 interface AuthFormProps {
   mode: 'signin' | 'signup';
@@ -36,8 +45,20 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, onToggleMode }) => {
 
     try {
       if (mode === 'signup') {
-        if (!formData.name || !formData.email || !formData.password || !formData.role) {
+        // Validate and sanitize inputs
+        const sanitizedName = sanitizeInput(formData.name);
+        const sanitizedEmail = sanitizeInput(formData.email);
+        
+        if (!sanitizedName || !sanitizedEmail || !formData.password || !formData.role) {
           throw new Error('Please fill in all fields');
+        }
+
+        if (!isValidEmail(sanitizedEmail)) {
+          throw new Error('Please enter a valid email address');
+        }
+
+        if (formData.password.length < 6) {
+          throw new Error('Password must be at least 6 characters long');
         }
         
         // For TVET users, interested_field is required
@@ -46,11 +67,11 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, onToggleMode }) => {
         }
         
         const signupData: SignupData = {
-          name: formData.name,
-          email: formData.email,
+          name: sanitizedName,
+          email: sanitizedEmail,
           password: formData.password,
           role: formData.role,
-          interested_field: formData.interested_field,
+          ...(formData.role === 'TVET' && formData.interested_field ? { interested_field: formData.interested_field } : {}),
         };
         
         await api.signup(signupData);
@@ -75,12 +96,19 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, onToggleMode }) => {
         });
         onToggleMode();
       } else {
-        if (!formData.email || !formData.password) {
+        // Validate and sanitize signin inputs
+        const sanitizedEmail = sanitizeInput(formData.email);
+        
+        if (!sanitizedEmail || !formData.password) {
           throw new Error('Please fill in all fields');
+        }
+
+        if (!isValidEmail(sanitizedEmail)) {
+          throw new Error('Please enter a valid email address');
         }
         
         const signinData: SigninData = {
-          email: formData.email,
+          email: sanitizedEmail,
           password: formData.password,
         };
         
@@ -204,11 +232,11 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, onToggleMode }) => {
                     <SelectValue placeholder="Select your field of interest" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="agriculture">Agriculture</SelectItem>
-                    <SelectItem value="engineering">Engineering</SelectItem>
-                    <SelectItem value="technology">Technology</SelectItem>
-                    <SelectItem value="healthcare">Healthcare</SelectItem>
-                    <SelectItem value="business">Business</SelectItem>
+                    {TVET_INTEREST_FIELDS.map(({ value, label }) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

@@ -1,21 +1,28 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { api, GenerateTestResponse, RecommendCoursesResponse } from '@/lib/api';
 import { safeParseLocalStorage, localStorageValidators } from '@/lib/utils';
-import { LogOut, User, BookOpen, FileText, Loader2, CheckCircle, TrendingUp, Users, Award, Clock } from 'lucide-react';
+import { LogOut, User, BookOpen, FileText, Loader2, CheckCircle, TrendingUp, Users, Award, Clock, Home } from 'lucide-react';
 import { TestDisplay } from './TestDisplay';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 
 export const Dashboard: React.FC = () => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedTest, setGeneratedTest] = useState<GenerateTestResponse | null>(null);
   const [recommendedCourses, setRecommendedCourses] = useState<RecommendCoursesResponse | null>(null);
   const [recommendationsTimestamp, setRecommendationsTimestamp] = useState<string | null>(null);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
 
   // Load recommendations from localStorage on mount
   useEffect(() => {
@@ -112,7 +119,7 @@ export const Dashboard: React.FC = () => {
           <Card>
             <CardContent className="p-6">
               <p className="text-destructive">Error: User ID is missing. Please log in again.</p>
-              <Button onClick={logout} className="mt-4">
+              <Button onClick={handleLogout} className="mt-4">
                 Back to Login
               </Button>
             </CardContent>
@@ -147,7 +154,7 @@ export const Dashboard: React.FC = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={logout}
+                onClick={handleLogout}
                 className="text-muted-foreground hover:text-foreground"
               >
                 <LogOut className="w-4 h-4 mr-2" />

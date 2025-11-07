@@ -247,7 +247,7 @@ export const TestResults: React.FC<TestResultsProps> = ({
               disabled={isDownloadingReport}
               className="px-8 py-6 text-lg font-medium"
             >
-              {isDownloadingReport ? 'Generating Report…' : 'Download Personality Report'}
+              {isDownloadingReport ? 'Downloading...' : 'Download Report'}
             </Button>
             <Button
               onClick={onNewTest}

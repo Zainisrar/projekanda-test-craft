@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { TestResult } from '@/lib/api';
+import { SubmitTestResultResponse, api } from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Trophy, 
   BarChart3, 
@@ -20,7 +21,8 @@ import {
   Target,
   Award,
   FileText,
-  Download
+  Download,
+  Loader2
 } from 'lucide-react';
 
 interface SelectedJob {
@@ -45,18 +47,32 @@ interface CVData {
 interface ADOFReportsProps {
   selectedJob: SelectedJob;
   cvData: CVData;
-  testResults: TestResult;
+  academicTestResults: SubmitTestResultResponse | null;
+  personalityTestResults: SubmitTestResultResponse | null;
   onBackToJobs: () => void;
 }
 
 export const ADOFReports: React.FC<ADOFReportsProps> = ({ 
   selectedJob, 
   cvData, 
-  testResults, 
+  academicTestResults, 
+  personalityTestResults,
   onBackToJobs 
 }) => {
-  const { data } = testResults;
-  const { percentage, total_score, max_score, analysis } = data;
+  // Calculate combined score from both tests
+  const academicPercentage = academicTestResults?.data?.percentage || 0;
+  const personalityPercentage = personalityTestResults?.data?.percentage || 0;
+  const percentage = (academicPercentage + personalityPercentage) / 2;
+  
+  // For compatibility with the existing UI, create a combined data structure
+  const data = {
+    percentage,
+    total_score: 0,
+    max_score: 0,
+    analysis: {} as Record<string, string>,
+  };
+  const [isDownloadingReport, setIsDownloadingReport] = useState(false);
+  const { toast } = useToast();
 
   const getScoreColor = (percentage: number) => {
     if (percentage >= 80) return 'text-green-600';
@@ -116,25 +132,47 @@ export const ADOFReports: React.FC<ADOFReportsProps> = ({
     ? Math.round((skillMatch.length / selectedJob.skills.length) * 100)
     : 0;
 
-  const handleDownloadReport = () => {
-    // In a real application, this would generate and download a PDF report
-    const reportData = {
-      candidate: cvData,
-      job: selectedJob,
-      testResults: testResults,
-      timestamp: new Date().toISOString()
-    };
-    
-    const dataStr = JSON.stringify(reportData, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    
-    const exportFileDefaultName = `ADOF_Report_${cvData.name.replace(/\s+/g, '_')}_${selectedJob.title.replace(/\s+/g, '_')}.json`;
-    
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
-    linkElement.click();
+  const handleDownloadReport = async () => {
+    // For now, we'll use the personality test result ID
+    // In a future update, this could generate a combined report
+    const resultId = personalityTestResults?.data?.result_id || academicTestResults?.data?.result_id;
+    if (!resultId) {
+      toast({
+        title: 'Report Unavailable',
+        description: 'No result ID available for report generation.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setIsDownloadingReport(true);
+    try {
+      const blob = await api.downloadReport(resultId);
+      const timestamp = new Date().toISOString().slice(0, 10);
+      const filename = `adof_assessment_report_${timestamp}.pdf`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast({ 
+        title: 'Report Downloaded', 
+        description: 'The ADOF assessment report was downloaded successfully.' 
+      });
+    } catch (error: any) {
+      console.error('Report download failed:', error);
+      toast({ 
+        title: 'Download Failed', 
+        description: error?.message || 'Unable to download report.', 
+        variant: 'destructive' 
+      });
+    } finally {
+      setIsDownloadingReport(false);
+    }
   };
+
 
   return (
     <div className="space-y-6">
@@ -213,51 +251,105 @@ export const ADOFReports: React.FC<ADOFReportsProps> = ({
           
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span>Assessment Score</span>
-              <span>{total_score}/{max_score} points</span>
+              <span>Combined Assessment Score</span>
+              <span className="font-medium">{Math.round(percentage)}%</span>
             </div>
             <Progress value={percentage} className="h-3" />
           </div>
         </CardContent>
       </Card>
 
-      {/* Detailed Analysis */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Competency Analysis */}
-        {Object.keys(analysis).length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <BarChart3 className="w-5 h-5" />
-                <span>Competency Analysis</span>
-              </CardTitle>
-              <CardDescription>
-                Assessment of key traits and competencies
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {Object.entries(analysis).map(([trait, level]) => (
-                  <div key={trait} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <Target className="w-4 h-4 text-primary" />
-                      <div>
-                        <h4 className="font-medium text-foreground">{trait}</h4>
-                        <p className="text-xs text-muted-foreground">Behavioral trait</p>
-                      </div>
-                    </div>
-                    <Badge 
-                      variant={level === 'Strength' ? 'default' : 'secondary'}
-                      className="text-sm"
-                    >
-                      {level}
+      {/* Individual Test Results */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Academic Test Results */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <GraduationCap className="w-5 h-5" />
+              <span>Academic Test</span>
+            </CardTitle>
+            <CardDescription>Knowledge-based assessment results</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {academicTestResults ? (
+              <>
+                <div className="text-center">
+                  <div className={`text-4xl font-bold ${getScoreColor(academicTestResults.data.percentage)}`}>
+                    {academicTestResults.data.percentage}%
+                  </div>
+                  <Badge 
+                    variant={getScoreBadgeVariant(academicTestResults.data.percentage)} 
+                    className="mt-2"
+                  >
+                    Grade: {academicTestResults.data.grade}
+                  </Badge>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Correct Answers:</span>
+                    <span className="font-medium">{academicTestResults.data.correct_answers}/{academicTestResults.data.total_questions}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Status:</span>
+                    <Badge variant={academicTestResults.data.status === 'Pass' ? 'default' : 'destructive'}>
+                      {academicTestResults.data.status}
                     </Badge>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                </div>
+                <Progress value={academicTestResults.data.percentage} className="h-2" />
+              </>
+            ) : (
+              <p className="text-center text-muted-foreground">No results available</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Personality Test Results */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Target className="w-5 h-5" />
+              <span>Personality Test</span>
+            </CardTitle>
+            <CardDescription>Behavioral assessment results</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {personalityTestResults ? (
+              <>
+                <div className="text-center">
+                  <div className={`text-4xl font-bold ${getScoreColor(personalityTestResults.data.percentage)}`}>
+                    {personalityTestResults.data.percentage}%
+                  </div>
+                  <Badge 
+                    variant={getScoreBadgeVariant(personalityTestResults.data.percentage)} 
+                    className="mt-2"
+                  >
+                    Grade: {personalityTestResults.data.grade}
+                  </Badge>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Correct Answers:</span>
+                    <span className="font-medium">{personalityTestResults.data.correct_answers}/{personalityTestResults.data.total_questions}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Status:</span>
+                    <Badge variant={personalityTestResults.data.status === 'Pass' ? 'default' : 'destructive'}>
+                      {personalityTestResults.data.status}
+                    </Badge>
+                  </div>
+                </div>
+                <Progress value={personalityTestResults.data.percentage} className="h-2" />
+              </>
+            ) : (
+              <p className="text-center text-muted-foreground">No results available</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Detailed Analysis */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {/* Skills Match Analysis */}
         <Card>
@@ -378,12 +470,17 @@ export const ADOFReports: React.FC<ADOFReportsProps> = ({
       <div className="flex flex-col sm:flex-row gap-4 justify-center">
         <Button
           onClick={handleDownloadReport}
+          disabled={isDownloadingReport}
           size="lg"
           variant="outline"
           className="px-8 py-6 text-lg font-medium"
         >
-          <Download className="mr-3 h-5 w-5" />
-          Download Report
+          {isDownloadingReport ? (
+            <Loader2 className="mr-3 h-5 w-5 animate-spin" />
+          ) : (
+            <Download className="mr-3 h-5 w-5" />
+          )}
+          {isDownloadingReport ? 'Downloading...' : 'Download Report'}
         </Button>
         
         <Button
