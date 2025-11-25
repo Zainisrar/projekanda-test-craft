@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { api, Test } from '@/lib/api';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { 
   ClipboardList,
   Plus,
@@ -17,10 +18,48 @@ import {
 } from 'lucide-react';
 import { TestForm } from './TestForm';
 
+const DeleteTestDialog = ({ 
+  test, 
+  isDeleting, 
+  onDelete 
+}: { 
+  test: Test; 
+  isDeleting: boolean; 
+  onDelete: () => void;
+}) => (
+  <AlertDialogContent>
+    <AlertDialogHeader>
+      <AlertDialogTitle>Delete Test</AlertDialogTitle>
+      <AlertDialogDescription>
+        Are you sure you want to delete "{test.title}"? This action cannot be undone.
+        All associated test data will also be removed.
+      </AlertDialogDescription>
+    </AlertDialogHeader>
+    <AlertDialogFooter>
+      <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+      <AlertDialogAction
+        onClick={onDelete}
+        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+        disabled={isDeleting}
+      >
+        {isDeleting ? (
+          <>
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            Deleting...
+          </>
+        ) : (
+          'Delete'
+        )}
+      </AlertDialogAction>
+    </AlertDialogFooter>
+  </AlertDialogContent>
+);
+
 export const TestsList: React.FC = () => {
   const { toast } = useToast();
   const [tests, setTests] = useState<Test[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [deletingTestId, setDeletingTestId] = useState<string | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedTest, setSelectedTest] = useState<Test | null>(null);
   const [hasError, setHasError] = useState(false);
@@ -68,13 +107,25 @@ export const TestsList: React.FC = () => {
     setIsFormOpen(true);
   };
 
-  const handleDeleteTest = async (test: Test) => {
-    // Backend API doesn't support DELETE /tests/{id} yet
-    toast({
-      title: 'Feature Not Available',
-      description: 'Test deletion is not supported by the backend API yet. Please contact the backend team to enable this endpoint.',
-      variant: 'destructive',
-    });
+  const handleDeleteTest = async (testId: string) => {
+    setDeletingTestId(testId);
+    try {
+      await api.deleteTest(testId);
+      toast({
+        title: 'Success',
+        description: 'Test deleted successfully',
+      });
+      loadTests();
+    } catch (error) {
+      console.error('Error deleting test:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to delete test',
+        variant: 'destructive',
+      });
+    } finally {
+      setDeletingTestId(null);
+    }
   };
 
   const handleFormSuccess = () => {
@@ -202,22 +253,30 @@ export const TestsList: React.FC = () => {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleEditTest(test)}
-                              disabled
-                              className="opacity-50 cursor-not-allowed"
-                              title="Edit feature not available - Backend API doesn't support this yet"
                             >
                               <Edit className="w-4 h-4" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteTest(test)}
-                              disabled
-                              className="text-destructive hover:text-destructive opacity-50 cursor-not-allowed"
-                              title="Delete feature not available - Backend API doesn't support this yet"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="text-destructive hover:text-destructive"
+                                  disabled={deletingTestId === test._id}
+                                >
+                                  {deletingTestId === test._id ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : (
+                                    <Trash2 className="w-4 h-4" />
+                                  )}
+                                </Button>
+                              </AlertDialogTrigger>
+                              <DeleteTestDialog 
+                                test={test}
+                                isDeleting={deletingTestId === test._id}
+                                onDelete={() => handleDeleteTest(test._id)}
+                              />
+                            </AlertDialog>
                           </div>
                         </td>
                       </tr>
@@ -250,24 +309,38 @@ export const TestsList: React.FC = () => {
                             variant="outline"
                             size="sm"
                             onClick={() => handleEditTest(test)}
-                            disabled
-                            className="flex-1 opacity-50 cursor-not-allowed"
-                            title="Edit feature not available - Backend API doesn't support this yet"
+                            className="flex-1"
                           >
                             <Edit className="w-4 h-4 mr-2" />
                             Edit
                           </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDeleteTest(test)}
-                            disabled
-                            className="text-destructive hover:text-destructive flex-1 opacity-50 cursor-not-allowed"
-                            title="Delete feature not available - Backend API doesn't support this yet"
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Delete
-                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-destructive hover:text-destructive flex-1"
+                                disabled={deletingTestId === test._id}
+                              >
+                                {deletingTestId === test._id ? (
+                                  <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    Deleting...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Delete
+                                  </>
+                                )}
+                              </Button>
+                            </AlertDialogTrigger>
+                            <DeleteTestDialog 
+                              test={test}
+                              isDeleting={deletingTestId === test._id}
+                              onDelete={() => handleDeleteTest(test._id)}
+                            />
+                          </AlertDialog>
                         </div>
                       </div>
                     </CardContent>

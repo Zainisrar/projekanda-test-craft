@@ -13,6 +13,7 @@ import { candidatesApi, Candidate, CandidateFilters, Job, UserData } from '@/lib
 import { apiClient } from '@/lib/apiClient';
 import { Search, Download, Eye, CheckCircle, XCircle, FileText, Users, Filter, RefreshCw, Briefcase, Info } from 'lucide-react';
 import { CandidateDetails } from './CandidateDetails';
+import { CVViewerModal } from './CVViewerModal';
 import { Breadcrumb } from '../Breadcrumb';
 
 export const CandidatesList: React.FC = () => {
@@ -35,6 +36,9 @@ export const CandidatesList: React.FC = () => {
   const [showCandidateDetails, setShowCandidateDetails] = useState(false);
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [viewMode, setViewMode] = useState<'candidates' | 'all-users'>('all-users');
+  const [showCVModal, setShowCVModal] = useState(false);
+  const [selectedCVUrl, setSelectedCVUrl] = useState<string | null>(null);
+  const [selectedCVUserName, setSelectedCVUserName] = useState<string>('');
 
   const loadCandidates = useCallback(async () => {
     // Candidates API endpoint doesn't exist yet, so we'll skip this for now
@@ -545,16 +549,14 @@ export const CandidatesList: React.FC = () => {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                asChild
                                 className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 h-8 w-8 p-0"
+                                onClick={() => {
+                                  setSelectedCVUrl(user.CVupload || null);
+                                  setSelectedCVUserName(user.name || '');
+                                  setShowCVModal(true);
+                                }}
                               >
-                                <a 
-                                  href={`https://projekanda.top/${user.CVupload}`} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                >
-                                  <FileText className="w-4 h-4" />
-                                </a>
+                                <FileText className="w-4 h-4" />
                               </Button>
                             ) : (
                               <span className="text-muted-foreground text-xs">No CV</span>
@@ -737,6 +739,20 @@ export const CandidatesList: React.FC = () => {
           onDownloadCV={handleDownloadCV}
         />
       )}
+
+      {/* CV Viewer Modal */}
+      <CVViewerModal
+        cvUrl={selectedCVUrl}
+        candidateName={selectedCVUserName}
+        open={showCVModal}
+        onOpenChange={(open) => {
+          setShowCVModal(open);
+          if (!open) {
+            setSelectedCVUrl(null);
+            setSelectedCVUserName('');
+          }
+        }}
+      />
     </div>
   );
 };

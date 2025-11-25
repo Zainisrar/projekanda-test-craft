@@ -12,6 +12,7 @@ export interface Job {
   salary?: string | number;
   skills?: string[];
   test_ids?: string[];
+  test_id?: string; // _id of the selected academic test
   // keep older optional fields for compatibility
   category?: string;
   status?: 'active' | 'inactive' | 'draft';
@@ -578,5 +579,46 @@ export const usersApi = {
   clearCache(): void {
     localStorage.removeItem('all_users_cache');
     localStorage.removeItem('all_users_cache_timestamp');
+  },
+
+  async submitUserData(data: {
+    name: string;
+    email: string;
+    phoneNo: string;
+    workexperience: string;
+    skills: string;
+    educationalbackground: string;
+    CVupload: File;
+    jobid: string;
+    user_id: string;
+  }): Promise<{ message?: string; user?: UserData }> {
+    // Create FormData for multipart/form-data request
+    const formData = new FormData();
+    formData.append('name', data.name);
+    formData.append('email', data.email);
+    formData.append('phoneNo', data.phoneNo);
+    formData.append('workexperience', data.workexperience);
+    formData.append('skills', data.skills);
+    formData.append('educationalbackground', data.educationalbackground);
+    formData.append('CVupload', data.CVupload);
+    formData.append('jobid', data.jobid);
+    formData.append('user_id', data.user_id);
+
+    const response = await fetch(`${API_BASE_URL}/submit-user-data`, {
+      method: 'POST',
+      body: formData,
+      // Don't set Content-Type header - browser will set it with boundary for FormData
+    });
+
+    if (!response.ok) {
+      await handleApiError(response);
+    }
+
+    const result = await response.json();
+
+    // Clear users cache after submitting new user data
+    this.clearCache();
+
+    return result;
   },
 };

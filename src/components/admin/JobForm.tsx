@@ -147,7 +147,8 @@ export const JobForm: React.FC<JobFormProps> = ({ job, onClose }) => {
         salary: formData.salary,
         description: formData.description,
         skills: formData.skills.filter(skill => skill.trim() !== ''),
-        test_ids: test_ids // Array of test IDs that will be saved to the database
+        test_ids: test_ids, // Array of test IDs that will be saved to the database
+        test_id: formData.academic_test_id // _id of the selected academic test
       };
 
       if (job) {

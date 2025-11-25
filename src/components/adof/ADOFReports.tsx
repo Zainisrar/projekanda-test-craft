@@ -86,6 +86,12 @@ export const ADOFReports: React.FC<ADOFReportsProps> = ({
     return 'destructive';
   };
 
+  const getStatusBadgeVariant = (status: string) => {
+    if (status === 'Completed') return 'secondary';
+    if (status === 'Pass') return 'default';
+    return 'destructive';
+  };
+
   const getRecommendation = (percentage: number) => {
     if (percentage >= 80) {
       return {
@@ -320,24 +326,35 @@ export const ADOFReports: React.FC<ADOFReportsProps> = ({
                   <div className={`text-4xl font-bold ${getScoreColor(personalityTestResults.data.percentage)}`}>
                     {personalityTestResults.data.percentage}%
                   </div>
-                  <Badge 
-                    variant={getScoreBadgeVariant(personalityTestResults.data.percentage)} 
-                    className="mt-2"
-                  >
-                    Grade: {personalityTestResults.data.grade}
-                  </Badge>
+                  {/* Only show grade badge if it's not N/A (for backward compatibility) */}
+                  {personalityTestResults.data.grade !== 'N/A' && (
+                    <Badge 
+                      variant={getScoreBadgeVariant(personalityTestResults.data.percentage)} 
+                      className="mt-2"
+                    >
+                      Grade: {personalityTestResults.data.grade}
+                    </Badge>
+                  )}
                 </div>
                 <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Correct Answers:</span>
-                    <span className="font-medium">{personalityTestResults.data.correct_answers}/{personalityTestResults.data.total_questions}</span>
-                  </div>
+                  {/* Don't show correct answers for personality tests - they don't have correct/incorrect answers */}
+                  {personalityTestResults.data.grade !== 'N/A' && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Correct Answers:</span>
+                      <span className="font-medium">{personalityTestResults.data.correct_answers}/{personalityTestResults.data.total_questions}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Status:</span>
-                    <Badge variant={personalityTestResults.data.status === 'Pass' ? 'default' : 'destructive'}>
+                    <Badge variant={getStatusBadgeVariant(personalityTestResults.data.status)}>
                       {personalityTestResults.data.status}
                     </Badge>
                   </div>
+                  {personalityTestResults.data.grade === 'N/A' && (
+                    <p className="text-xs text-muted-foreground text-center mt-2">
+                      Personality assessments measure traits and preferences, not correctness
+                    </p>
+                  )}
                 </div>
                 <Progress value={personalityTestResults.data.percentage} className="h-2" />
               </>

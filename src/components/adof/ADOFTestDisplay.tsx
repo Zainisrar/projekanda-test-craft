@@ -9,7 +9,8 @@ import {
   GenerateTestResponse,
   SubmitTestResultResponse,
   TestQuestionNew,
-  Test
+  Test,
+  TestResult
 } from '@/lib/api';
 import { ArrowLeft, CheckCircle, FileText, ChevronLeft, ChevronRight, Loader2, User, Briefcase, ClipboardCheck } from 'lucide-react';
 
@@ -244,31 +245,96 @@ export const ADOFTestDisplay: React.FC<ADOFTestDisplayProps> = ({
     setIsSubmitting(true);
 
     try {
-      // Convert answers to the required format (question_no as key)
-      const answersForAPI: Record<string, string> = {};
-      Object.entries(selectedAnswers).forEach(([questionIndex, answerText]) => {
-        const question = testData.data.questions[parseInt(questionIndex)];
-        answersForAPI[question.question_no.toString()] = answerText;
-      });
+      // Handle personality tests differently
+      if (testType === 'personality') {
+        // Convert answers to the required format for personality test API
+        // Format: { "1": "Agree", "2": "Strongly Agree", ... }
+        const answersForAPI: Record<string, string> = {};
+        Object.entries(selectedAnswers).forEach(([questionIndex, answerText]) => {
+          const question = testData.data.questions[parseInt(questionIndex)];
+          // Use question_no as key (1-20), answerText as value (Likert scale response)
+          answersForAPI[question.question_no.toString()] = answerText;
+        });
 
-      const requestBody = {
-        user_id: userId,
-        job_id: selectedJob.id,
-        test_id: testData.data.test_id,
-        questions: testData.data.questions,
-        user_answers: answersForAPI,
-      };
+        // Submit personality test answers using submit_answers endpoint
+        const submitRequest = {
+          user_id: userId,
+          mcq_id: testData.data.test_id, // Use test_id as mcq_id
+          answers: answersForAPI,
+        };
 
-      console.log('Submitting test result:', requestBody);
+        console.log('Submitting personality test answers:', submitRequest);
 
-      const submitResponse = await api.submitTestResult(requestBody);
-      
-      toast({
-        title: 'Assessment Completed!',
-        description: `Your score: ${submitResponse.data.percentage}% (${submitResponse.data.grade})`,
-      });
+        const submitResponse = await api.submitAnswers(submitRequest);
+        
+        // Get result_id from the response
+        const resultId = submitResponse.data.result_id;
+        
+        if (!resultId) {
+          throw new Error('Result ID not found in submission response');
+        }
 
-      onTestComplete(submitResponse);
+        // Fetch the full result using get_result_by_id endpoint
+        console.log('Fetching result by ID:', resultId);
+        const resultResponse: TestResult = await api.getResultById(resultId);
+
+        // Transform TestResult to SubmitTestResultResponse format for compatibility
+        const transformedResponse: SubmitTestResultResponse = {
+          message: resultResponse.message || 'Assessment completed successfully',
+          data: {
+            result_id: resultResponse.data.result_id,
+            user_id: resultResponse.data.user_id,
+            job_id: selectedJob.id,
+            test_id: resultResponse.data.mcq_id,
+            total_questions: testData.data.questions.length,
+            correct_answers: Math.round((resultResponse.data.percentage / 100) * testData.data.questions.length),
+            wrong_answers: testData.data.questions.length - Math.round((resultResponse.data.percentage / 100) * testData.data.questions.length),
+            percentage: resultResponse.data.percentage,
+            grade: resultResponse.data.percentage >= 80 ? 'A' : 
+                   resultResponse.data.percentage >= 60 ? 'B' : 
+                   resultResponse.data.percentage >= 40 ? 'C' : 
+                   resultResponse.data.percentage >= 20 ? 'D' : 'F',
+            status: resultResponse.data.percentage >= 60 ? 'Pass' : 'Fail',
+            submitted_at: new Date().toISOString(),
+          },
+        };
+
+        console.log('Transformed response:', transformedResponse);
+
+        toast({
+          title: 'Assessment Completed!',
+          description: `Your score: ${transformedResponse.data.percentage}% (${transformedResponse.data.grade})`,
+        });
+
+        onTestComplete(transformedResponse);
+      } else {
+        // Academic test submission (existing logic)
+        // Convert answers to the required format (question_no as key)
+        const answersForAPI: Record<string, string> = {};
+        Object.entries(selectedAnswers).forEach(([questionIndex, answerText]) => {
+          const question = testData.data.questions[parseInt(questionIndex)];
+          answersForAPI[question.question_no.toString()] = answerText;
+        });
+
+        const requestBody = {
+          user_id: userId,
+          job_id: selectedJob.id,
+          test_id: testData.data.test_id,
+          questions: testData.data.questions,
+          user_answers: answersForAPI,
+        };
+
+        console.log('Submitting academic test result:', requestBody);
+
+        const submitResponse = await api.submitTestResult(requestBody);
+        
+        toast({
+          title: 'Assessment Completed!',
+          description: `Your score: ${submitResponse.data.percentage}% (${submitResponse.data.grade})`,
+        });
+
+        onTestComplete(submitResponse);
+      }
     } catch (error) {
       console.error('Error submitting test:', error);
       toast({

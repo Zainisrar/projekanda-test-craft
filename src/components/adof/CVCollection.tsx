@@ -6,6 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { apiClient } from '@/lib/apiClient';
 import { FileText, Upload, X, Plus, ArrowLeft, ChevronRight, User, Mail, Phone, GraduationCap, Briefcase } from 'lucide-react';
 
 interface SelectedJob {
@@ -35,6 +37,7 @@ interface CVCollectionProps {
 
 export const CVCollection: React.FC<CVCollectionProps> = ({ selectedJob, onCVSubmit, onBack }) => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [formData, setFormData] = useState<CVData>({
     name: '',
     email: '',
@@ -158,22 +161,62 @@ export const CVCollection: React.FC<CVCollectionProps> = ({ selectedJob, onCVSub
       return;
     }
 
+    if (!formData.file) {
+      toast({
+        title: 'CV File Required',
+        description: 'Please upload your CV file.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!user?.id) {
+      toast({
+        title: 'Authentication Required',
+        description: 'Please log in to submit your CV.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast({
-        title: 'CV Submitted Successfully!',
-        description: 'Your information has been saved. Proceeding to assessment.',
+      // Prepare data for API call - map fields to API format
+      const apiData = {
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        phoneNo: formData.phone.trim(), // Map phone to phoneNo
+        workexperience: formData.experience.trim(), // Map experience to workexperience
+        skills: formData.skills.join(', '), // Convert skills array to comma-separated string
+        educationalbackground: formData.education.trim(), // Map education to educationalbackground
+        CVupload: formData.file, // File upload
+        jobid: selectedJob.id, // Map selectedJob.id to jobid
+        user_id: user.id, // Get user_id from auth context
+      };
+
+      console.log('Submitting CV data:', {
+        ...apiData,
+        CVupload: apiData.CVupload.name, // Log filename instead of file object
       });
 
+      // Call the API endpoint
+      const response = await apiClient.submitUserData(apiData);
+      
+      console.log('CV submission response:', response);
+
+      toast({
+        title: 'CV Submitted Successfully!',
+        description: response.message || 'Your information has been saved. Proceeding to assessment.',
+      });
+
+      // Only proceed to next step after successful API call
       onCVSubmit(formData);
     } catch (error) {
+      console.error('CV submission error:', error);
       toast({
         title: 'Submission Failed',
-        description: 'Please try again.',
+        description: error instanceof Error ? error.message : 'Failed to submit CV. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -351,7 +394,7 @@ export const CVCollection: React.FC<CVCollectionProps> = ({ selectedJob, onCVSub
             <div className="space-y-4">
               <div className="flex items-center space-x-2 mb-4">
                 <Upload className="w-4 h-4 text-primary" />
-                <h3 className="text-lg font-semibold">CV Upload (Optional)</h3>
+                <h3 className="text-lg font-semibold">CV Upload *</h3>
               </div>
 
               <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">

@@ -58,14 +58,12 @@ export const TestForm: React.FC<TestFormProps> = ({ test, onSuccess, onCancel })
 
     try {
       if (test) {
-        // Update existing test - Backend API doesn't support PUT /tests/{id} yet
+        // Update existing test
+        await api.updateTest(test._id, formData);
         toast({
-          title: 'Feature Not Available',
-          description: 'Test editing is not supported by the backend API yet. Please create a new test instead.',
-          variant: 'destructive',
+          title: 'Success',
+          description: 'Test updated successfully',
         });
-        setIsSubmitting(false);
-        return;
       } else {
         // Create new test
         await api.createTest(formData);

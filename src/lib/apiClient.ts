@@ -363,6 +363,81 @@ class CentralizedAPIClient {
     return this.makeRequest<UsersResponse>(endpoint, { method: 'GET' }, CACHE_CONFIG.USERS.ttl, useCache);
   }
 
+  async submitUserData(data: {
+    name: string;
+    email: string;
+    phoneNo: string;
+    workexperience: string;
+    skills: string;
+    educationalbackground: string;
+    CVupload: File;
+    jobid: string;
+    user_id: string;
+  }): Promise<{ message?: string; user?: UserData }> {
+    // Create FormData for multipart/form-data request
+    const formData = new FormData();
+    formData.append('name', data.name);
+    formData.append('email', data.email);
+    formData.append('phoneNo', data.phoneNo);
+    formData.append('workexperience', data.workexperience);
+    formData.append('skills', data.skills);
+    formData.append('educationalbackground', data.educationalbackground);
+    formData.append('CVupload', data.CVupload);
+    formData.append('jobid', data.jobid);
+    formData.append('user_id', data.user_id);
+
+    // For FormData requests, we need to use fetch directly (not makeRequest)
+    // because makeRequest uses JSON.stringify which doesn't work with FormData
+    const response = await fetch(`${API_BASE_URL}/submit-user-data`, {
+      method: 'POST',
+      body: formData,
+      // Don't set Content-Type header - browser will set it with boundary for FormData
+    });
+
+    if (!response.ok) {
+      let errorMessage = 'An error occurred';
+      try {
+        const text = await response.text();
+        if (text) {
+          try {
+            const errorData = JSON.parse(text);
+            errorMessage = errorData.message || errorData.error || errorMessage;
+          } catch {
+            errorMessage = text || errorMessage;
+          }
+        }
+      } catch {
+        errorMessage = response.statusText || errorMessage;
+      }
+
+      switch (response.status) {
+        case 401:
+          errorMessage = 'Authentication required. Please log in again.';
+          localStorage.removeItem('auth_user');
+          window.location.href = '/admin/login';
+          break;
+        case 403:
+          errorMessage = 'Access denied. You do not have permission.';
+          break;
+        case 404:
+          errorMessage = 'Resource not found.';
+          break;
+        case 500:
+          errorMessage = 'Server error. Please try again later.';
+          break;
+      }
+
+      throw new Error(errorMessage);
+    }
+
+    const result = await response.json();
+
+    // Clear users cache after submitting new user data
+    this.clearCache('users');
+
+    return result;
+  }
+
   /**
    * API Methods - Dashboard
    */

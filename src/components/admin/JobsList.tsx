@@ -29,7 +29,7 @@ export const JobsList: React.FC = () => {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [editingJob, setEditingJob] = useState<Job | null>(null);
 
-  const loadJobs = useCallback(async () => {
+  const loadJobs = useCallback(async (forceRefresh: boolean = false) => {
     try {
       setIsLoading(true);
       const filters: JobFilters = {
@@ -40,7 +40,8 @@ export const JobsList: React.FC = () => {
         limit: 10
       };
 
-      const response = await jobsApi.getJobs(filters);
+      // Force fresh fetch after mutations (create/update/delete)
+      const response = await jobsApi.getJobs(filters, !forceRefresh);
       setJobs(response.jobs);
       setTotalPages(Math.ceil(response.total / 10));
     } catch (error) {
@@ -65,7 +66,7 @@ export const JobsList: React.FC = () => {
         title: 'Success',
         description: 'Job deleted successfully',
       });
-      loadJobs();
+      loadJobs(true); // Force refresh after delete
     } catch (error) {
       toast({
         title: 'Error',
@@ -88,7 +89,7 @@ export const JobsList: React.FC = () => {
   const handleJobFormClose = () => {
     setShowJobForm(false);
     setEditingJob(null);
-    loadJobs();
+    loadJobs(true); // Force refresh after create/update
   };
 
   const getStatusBadge = (status: string) => {

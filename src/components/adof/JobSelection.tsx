@@ -76,7 +76,7 @@ export const JobSelection: React.FC<JobSelectionProps> = ({ onJobSelect }) => {
           requirements: Array.isArray(job.requirements) ? job.requirements : 
                        typeof job.requirements === 'string' ? job.requirements.split('\n').filter(Boolean) : [],
           skills: Array.isArray(job.skills) ? job.skills : 
-                 typeof job.skills === 'string' ? job.skills.split(',').map((s: string) => s.trim()) : [],
+                 typeof job.skills === 'string' ? job.skills.split(/[;,]/).map((s: string) => s.trim()).filter(Boolean) : [],
           test_ids: Array.isArray(job.test_ids) ? job.test_ids : []
         }));
         
