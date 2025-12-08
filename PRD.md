@@ -1,5 +1,5 @@
 # Product Requirements Document (PRD)
-## EduPlatform - AI-Powered Assessment & Learning Platform
+## JobFinder - AI-Powered Assessment & Learning Platform
 
 ### Document Information
 - **Version**: 1.0
@@ -12,7 +12,7 @@
 ## 1. Executive Summary
 
 ### 1.1 Product Overview
-EduPlatform is a comprehensive AI-powered educational assessment platform designed to serve two distinct user groups: TVET (Technical and Vocational Education and Training) students and ADOF (Adult Development and Occupational Framework) professionals. The platform provides personalized assessments, course recommendations, and detailed analytics to support career development and skill enhancement.
+JobFinder is a comprehensive AI-powered educational assessment platform designed to serve two distinct user groups: TVET (Technical and Vocational Education and Training) students and ADOF (Adult Development and Occupational Framework) professionals. The platform provides personalized assessments, course recommendations, and detailed analytics to support career development and skill enhancement.
 
 ### 1.2 Key Value Propositions
 - **Personalized Learning**: AI-generated assessments tailored to individual roles and interests

@@ -140,7 +140,7 @@ export const Dashboard: React.FC = () => {
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                 <BookOpen className="w-4 h-4 text-primary-foreground" />
               </div>
-              <h1 className="text-xl font-bold text-foreground">EduPlatform</h1>
+              <h1 className="text-xl font-bold text-foreground">JobFinder</h1>
             </div>
             
             <div className="flex items-center space-x-4">

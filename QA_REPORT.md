@@ -1,7 +1,7 @@
 # QA Testing Report - Projekanda Test Craft
 **Date:** November 1, 2025
 **QA Engineer:** AI Assistant
-**Project:** EduPlatform - AI-Powered Assessment & Learning Platform
+**Project:** JobFinder - AI-Powered Assessment & Learning Platform
 
 ---
 
