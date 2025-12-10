@@ -47,9 +47,7 @@ export interface SubmitAnswersData {
   answers: Record<string, string>;
 }
 
-export interface SubmitAnswersPayload extends SubmitAnswersData {
-  // Ensure all fields are properly typed
-}
+export type SubmitAnswersPayload = SubmitAnswersData;
 
 export interface SubmitAnswersResponse {
   data: {
@@ -279,7 +277,7 @@ export const api = {
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-    
+
     try {
       const response = await fetch(`${API_BASE_URL}/generate_test`, {
         method: 'POST',
@@ -305,7 +303,7 @@ export const api = {
 
   async getMcqs(userId: string): Promise<GetMcqsResponse> {
     console.log('Getting MCQs for user:', userId);
-    
+
     const response = await fetch(`${API_BASE_URL}/get_mcqs/${userId}`, {
       method: 'GET',
       headers: {
@@ -314,7 +312,7 @@ export const api = {
     });
 
     const responseText = await response.text();
-    
+
     console.log('=== GET MCQS DEBUG ===');
     console.log('URL:', `${API_BASE_URL}/get_mcqs/${userId}`);
     console.log('Status:', response.status);
@@ -356,7 +354,7 @@ export const api = {
 
     const url = `${API_BASE_URL}/submit_answers`;
     const requestBody = JSON.stringify(data);
-    
+
     console.log('=== API SUBMIT DEBUG ===');
     console.log('URL:', url);
     console.log('Method: POST');
@@ -368,7 +366,7 @@ export const api = {
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-    
+
     try {
       const response = await fetch(url, {
         method: 'POST',
@@ -381,7 +379,7 @@ export const api = {
 
       // Read the response body once
       const responseText = await response.text();
-      
+
       console.log('=== API RESPONSE DEBUG ===');
       console.log('Status:', response.status);
       console.log('Status Text:', response.statusText);
@@ -389,7 +387,7 @@ export const api = {
       console.log('Response body:', responseText);
       console.log('Response length:', responseText.length);
       console.log('==========================');
-      
+
       if (!response.ok) {
         let errorMessage = 'Answer submission failed';
         try {
@@ -442,15 +440,15 @@ export const api = {
       throw new Error('Invalid response format from server');
     }
   },
-  
+
   async downloadReport(resultId: string): Promise<Blob> {
     if (!resultId?.trim()) {
       throw new Error('Valid result ID is required');
     }
-    
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-    
+
     try {
       const response = await fetch(`${API_BASE_URL}/generate-report`, {
         method: 'POST',
@@ -460,12 +458,12 @@ export const api = {
         body: JSON.stringify({ result_id: resultId }),
         signal: controller.signal
       });
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`Report generation failed: ${errorText || response.statusText}`);
       }
-      
+
       return await response.blob();
     } finally {
       clearTimeout(timeoutId);
@@ -479,7 +477,7 @@ export const api = {
     if (!interested_field?.trim()) {
       throw new Error('Valid interested field is required');
     }
-    
+
     const response = await fetch(`${API_BASE_URL}/recommend-courses`, {
       method: 'POST',
       headers: {
@@ -553,12 +551,12 @@ export const api = {
 
       const data = await response.json();
       console.log('API: getAllTests data:', data);
-      
+
       // Handle both array and object response formats
       if (Array.isArray(data)) {
         return { tests: data };
       }
-      
+
       return data;
     } catch (err) {
       console.error('API: getAllTests exception:', err);
@@ -700,7 +698,7 @@ export const api = {
       });
 
       const responseText = await response.text();
-      
+
       console.log('=== SUBMIT TEST RESULT DEBUG ===');
       console.log('Status:', response.status);
       console.log('Response:', responseText);

@@ -12,18 +12,18 @@ export function cn(...inputs: ClassValue[]) {
  * @returns parsed and validated data or null if invalid
  */
 export function safeParseLocalStorage<T>(
-  key: string, 
+  key: string,
   validator: (data: unknown) => data is T
 ): T | null {
   try {
     const stored = localStorage.getItem(key);
     if (!stored) return null;
-    
+
     const parsed = JSON.parse(stored);
     if (validator(parsed)) {
       return parsed;
     }
-    
+
     // Invalid data shape, remove from localStorage
     localStorage.removeItem(key);
     return null;
@@ -40,30 +40,26 @@ export function safeParseLocalStorage<T>(
 export const localStorageValidators = {
   // Validates RecommendCoursesResponse shape
   recommendCourses: (data: unknown): data is import('./api').RecommendCoursesResponse => {
-    return (
-      typeof data === 'object' &&
-      data !== null &&
-      'data' in data &&
-      typeof (data as any).data === 'object' &&
-      (data as any).data !== null &&
-      'courses' in (data as any).data &&
-      Array.isArray((data as any).data.courses)
-    );
+    if (typeof data !== 'object' || data === null) return false;
+    const obj = data as Record<string, unknown>;
+    if (!('data' in obj) || typeof obj.data !== 'object' || obj.data === null) return false;
+    const dataObj = obj.data as Record<string, unknown>;
+    return 'courses' in dataObj && Array.isArray(dataObj.courses);
   },
-  
+
   // Validates User shape
   user: (data: unknown): data is import('../contexts/AuthContext').User => {
+    if (typeof data !== 'object' || data === null) return false;
+    const obj = data as Record<string, unknown>;
     return (
-      typeof data === 'object' &&
-      data !== null &&
-      'id' in data &&
-      'name' in data &&
-      'email' in data &&
-      'role' in data &&
-      typeof (data as any).id === 'string' &&
-      typeof (data as any).name === 'string' &&
-      typeof (data as any).email === 'string' &&
-      (['TVET', 'ADOF', 'ADMIN'].includes((data as any).role))
+      'id' in obj &&
+      'name' in obj &&
+      'email' in obj &&
+      'role' in obj &&
+      typeof obj.id === 'string' &&
+      typeof obj.name === 'string' &&
+      typeof obj.email === 'string' &&
+      (['TVET', 'ADOF', 'ADMIN'].includes(obj.role as string))
     );
   }
 };
@@ -81,7 +77,7 @@ export function safeSetLocalStorage(key: string, value: string): boolean {
       console.warn(`localStorage value for key "${key}" exceeds 5MB`);
       return false;
     }
-    
+
     localStorage.setItem(key, value);
     return true;
   } catch (error) {
@@ -92,9 +88,9 @@ export function safeSetLocalStorage(key: string, value: string): boolean {
       cacheKeys.forEach(k => {
         try {
           localStorage.removeItem(k);
-        } catch {}
+        } catch { /* noop - continue clearing other cache keys */ }
       });
-      
+
       // Try again
       try {
         localStorage.setItem(key, value);

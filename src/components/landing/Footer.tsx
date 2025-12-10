@@ -56,13 +56,10 @@ export const Footer: React.FC<FooterProps> = ({
           {/* Brand Column */}
           <div className="lg:col-span-2">
             <a href="#" className="flex items-center gap-2 mb-4">
-              <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center">
-                <GraduationCap className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <span className="font-bold text-xl text-foreground">JobFinder</span>
+              <img src="/logo.jpeg" alt="JobFinder" className="h-10 w-auto object-contain rounded-lg" />
             </a>
             <p className="text-muted-foreground text-sm max-w-xs mb-4">
-              AI-powered educational assessment platform helping TVET students 
+              AI-powered educational assessment platform helping TVET students
               and ADOF professionals achieve their career goals.
             </p>
           </div>

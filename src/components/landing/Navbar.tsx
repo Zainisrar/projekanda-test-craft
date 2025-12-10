@@ -36,11 +36,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onSignIn, onSignUp }) => {
     e.preventDefault();
     const targetId = href.replace('#', '');
     const targetElement = document.getElementById(targetId);
-    
+
     if (targetElement) {
       targetElement.scrollIntoView({ behavior: 'smooth' });
     }
-    
+
     setIsMobileMenuOpen(false);
   };
 
@@ -50,20 +50,17 @@ export const Navbar: React.FC<NavbarProps> = ({ onSignIn, onSignUp }) => {
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled
-          ? 'bg-background/95 backdrop-blur-md shadow-sm border-b'
-          : 'bg-transparent'
-      }`}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled
+        ? 'bg-background/95 backdrop-blur-md shadow-sm border-b'
+        : 'bg-transparent'
+        }`}
     >
       <div className="container mx-auto px-4">
         <div className="h-16 flex items-center justify-between">
           {/* Logo */}
           <a href="#" className="flex items-center gap-2 group">
-            <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center group-hover:bg-primary/90 transition-colors">
-              <GraduationCap className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <span className="font-bold text-xl text-foreground">JobFinder</span>
+            <img src="/logo.jpeg" alt="JobFinder" className="h-10 w-auto object-contain rounded-lg" />
+
           </a>
 
           {/* Desktop Navigation */}
@@ -114,11 +111,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onSignIn, onSignUp }) => {
 
       {/* Mobile Menu */}
       <div
-        className={`md:hidden absolute top-16 left-0 right-0 bg-background/95 backdrop-blur-md border-b shadow-lg transition-all duration-300 ${
-          isMobileMenuOpen
-            ? 'opacity-100 translate-y-0'
-            : 'opacity-0 -translate-y-4 pointer-events-none'
-        }`}
+        className={`md:hidden absolute top-16 left-0 right-0 bg-background/95 backdrop-blur-md border-b shadow-lg transition-all duration-300 ${isMobileMenuOpen
+          ? 'opacity-100 translate-y-0'
+          : 'opacity-0 -translate-y-4 pointer-events-none'
+          }`}
       >
         <div className="container mx-auto px-4 py-4">
           <div className="flex flex-col gap-2">
