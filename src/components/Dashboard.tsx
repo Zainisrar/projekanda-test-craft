@@ -36,20 +36,20 @@ export const Dashboard: React.FC = () => {
 
   const handleGenerateTest = async () => {
     if (!user) return;
-    
+
     setIsGenerating(true);
     try {
       // First generate the test
       console.log('Step 1: Generating test...');
       const testData = await api.generateTest(user.id);
       console.log('Generated test data:', testData);
-      
+
       // Then try to get MCQs from database (this might be required for submit to work)
       console.log('Step 2: Getting MCQs from database...');
       try {
         const mcqsData = await api.getMcqs(user.id);
         console.log('MCQs data from database:', mcqsData);
-        
+
         // Use MCQs data if it has questions, otherwise use generated test data
         if (mcqsData.questions && mcqsData.questions.length > 0) {
           console.log('Using MCQs from database');
@@ -66,7 +66,7 @@ export const Dashboard: React.FC = () => {
         console.warn('Could not get MCQs from database, using generated test:', mcqError);
         setGeneratedTest(testData);
       }
-      
+
       toast({
         title: 'Test Generated Successfully!',
         description: 'Your personalized test is ready.',
@@ -140,9 +140,9 @@ export const Dashboard: React.FC = () => {
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                 <BookOpen className="w-4 h-4 text-primary-foreground" />
               </div>
-              <h1 className="text-xl font-bold text-foreground">JobFinder</h1>
+              <h1 className="text-xl font-bold text-foreground">Fit Finder</h1>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                 <User className="w-4 h-4" />
@@ -185,10 +185,10 @@ export const Dashboard: React.FC = () => {
                   Generate Your Test
                 </h3>
                 <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-10 leading-relaxed">
-                  Ready to challenge yourself? Create a personalized assessment tailored to your role and expertise level. 
+                  Ready to challenge yourself? Create a personalized assessment tailored to your role and expertise level.
                   Our AI-powered system generates questions specifically designed for your learning journey.
                 </p>
-                
+
                 <Button
                   onClick={handleGenerateTest}
                   disabled={isGenerating}
@@ -207,7 +207,7 @@ export const Dashboard: React.FC = () => {
                     </>
                   )}
                 </Button>
-                
+
                 {isGenerating && (
                   <div className="mt-8 p-6 bg-card/50 rounded-xl border border-border/50 max-w-md mx-auto">
                     <p className="text-base text-muted-foreground">
@@ -233,7 +233,7 @@ export const Dashboard: React.FC = () => {
                 <p className="text-xs text-muted-foreground mt-1">+2 from last week</p>
               </CardContent>
             </Card>
-            
+
             <Card className="bg-gradient-to-br from-success/10 to-success/5 border-success/20">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
@@ -246,7 +246,7 @@ export const Dashboard: React.FC = () => {
                 <p className="text-xs text-muted-foreground mt-1">+5% improvement</p>
               </CardContent>
             </Card>
-            
+
             <Card className="bg-gradient-to-br from-accent/10 to-accent/5 border-accent/20">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
@@ -259,7 +259,7 @@ export const Dashboard: React.FC = () => {
                 <p className="text-xs text-muted-foreground mt-1">This month</p>
               </CardContent>
             </Card>
-            
+
             <Card className="bg-gradient-to-br from-secondary/10 to-secondary/5 border-secondary/20">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
@@ -351,17 +351,17 @@ export const Dashboard: React.FC = () => {
                       <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                       <XAxis dataKey="name" className="text-xs" />
                       <YAxis className="text-xs" />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: 'hsl(var(--card))', 
-                          border: '1px solid hsl(var(--border))', 
-                          borderRadius: '8px' 
-                        }} 
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'hsl(var(--card))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px'
+                        }}
                       />
-                      <Line 
-                        type="monotone" 
-                        dataKey="score" 
-                        stroke="hsl(var(--primary))" 
+                      <Line
+                        type="monotone"
+                        dataKey="score"
+                        stroke="hsl(var(--primary))"
                         strokeWidth={3}
                         dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 6 }}
                       />
@@ -393,12 +393,12 @@ export const Dashboard: React.FC = () => {
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: 'hsl(var(--card))', 
-                          border: '1px solid hsl(var(--border))', 
-                          borderRadius: '8px' 
-                        }} 
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'hsl(var(--card))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px'
+                        }}
                       />
                     </PieChart>
                   </ResponsiveContainer>
@@ -420,12 +420,12 @@ export const Dashboard: React.FC = () => {
                     <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                     <XAxis dataKey="name" className="text-xs" />
                     <YAxis className="text-xs" />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--card))', 
-                        border: '1px solid hsl(var(--border))', 
-                        borderRadius: '8px' 
-                      }} 
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px'
+                      }}
                     />
                     <Bar dataKey="tests" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                   </BarChart>

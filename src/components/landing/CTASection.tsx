@@ -28,8 +28,8 @@ export const CTASection: React.FC<CTASectionProps> = ({ onGetStarted }) => {
 
           {/* Description */}
           <p className="text-lg text-white/80 mb-8 max-w-2xl mx-auto">
-            Join thousands of learners and professionals who are already using 
-            JobFinder to assess their skills, discover opportunities, and advance 
+            Join thousands of learners and professionals who are already using
+            Fit Finder to assess their skills, discover opportunities, and advance
             their careers.
           </p>
 

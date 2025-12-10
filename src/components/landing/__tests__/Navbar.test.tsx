@@ -24,7 +24,7 @@ describe('Navbar Unit Tests', () => {
 
       render(<Navbar onSignIn={mockOnSignIn} onSignUp={mockOnSignUp} />);
 
-      expect(screen.getByText('JobFinder')).toBeInTheDocument();
+      expect(screen.getByText('Fit Finder')).toBeInTheDocument();
     });
 
     it('should render Sign In and Sign Up buttons', () => {

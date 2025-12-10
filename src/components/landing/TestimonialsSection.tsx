@@ -17,7 +17,7 @@ export interface Statistic {
 
 export const TESTIMONIALS: Testimonial[] = [
   {
-    quote: "JobFinder helped me identify my skill gaps and recommended courses that perfectly matched my career goals. I landed my dream job within 3 months!",
+    quote: "Fit Finder helped me identify my skill gaps and recommended courses that perfectly matched my career goals. I landed my dream job within 3 months!",
     name: "Sarah Johnson",
     role: "TVET Graduate, Engineering",
   },
@@ -27,7 +27,7 @@ export const TESTIMONIALS: Testimonial[] = [
     role: "ADOF Professional, IT Sector",
   },
   {
-    quote: "As an educator, I recommend JobFinder to all my students. The personalized approach makes a real difference in their learning journey.",
+    quote: "As an educator, I recommend Fit Finder to all my students. The personalized approach makes a real difference in their learning journey.",
     name: "Dr. Emily Williams",
     role: "TVET Instructor",
   },
@@ -69,8 +69,8 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
             What Our Users Say
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Join thousands of learners and professionals who have transformed 
-            their careers with JobFinder.
+            Join thousands of learners and professionals who have transformed
+            their careers with Fit Finder.
           </p>
         </div>
 

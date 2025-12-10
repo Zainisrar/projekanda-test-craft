@@ -65,7 +65,7 @@ export const ADOFDashboard: React.FC = () => {
   const handlePersonalityTestComplete = async (results: SubmitTestResultResponse) => {
     setPersonalityTestResults(results);
     setIsGeneratingReport(true);
-    
+
     // Brief delay to show "Generating Report" state for better UX
     setTimeout(() => {
       setIsGeneratingReport(false);
@@ -96,22 +96,21 @@ export const ADOFDashboard: React.FC = () => {
           {steps.map((step, index) => {
             const Icon = step.icon;
             const isActive = currentStep === step.key;
-            const isCompleted = 
+            const isCompleted =
               (step.key === 'jobs' && selectedJob) ||
               (step.key === 'cv' && cvData) ||
               (step.key === 'academic-test' && academicTestResults) ||
               (step.key === 'personality-test' && personalityTestResults) ||
               (step.key === 'report' && academicTestResults && personalityTestResults);
-            
+
             return (
               <div key={step.key} className="flex items-center flex-shrink-0">
-                <div className={`flex items-center space-x-2 px-3 py-2 rounded-lg ${
-                  isCompleted 
-                    ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-100' 
-                    : isActive 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'bg-muted text-muted-foreground'
-                }`}>
+                <div className={`flex items-center space-x-2 px-3 py-2 rounded-lg ${isCompleted
+                    ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-100'
+                    : isActive
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground'
+                  }`}>
                   <Icon className="w-4 h-4" />
                   <span className="text-xs md:text-sm font-medium whitespace-nowrap">{step.label}</span>
                 </div>
@@ -163,15 +162,15 @@ export const ADOFDashboard: React.FC = () => {
         return <JobSelection onJobSelect={handleJobSelect} />;
       case 'cv':
         return (
-          <CVCollection 
-            selectedJob={selectedJob!} 
+          <CVCollection
+            selectedJob={selectedJob!}
             onCVSubmit={handleCVSubmit}
             onBack={() => setCurrentStep('jobs')}
           />
         );
       case 'academic-test':
         return (
-          <ADOFTestDisplay 
+          <ADOFTestDisplay
             selectedJob={selectedJob!}
             cvData={cvData!}
             userId={user?.id || ''}
@@ -182,7 +181,7 @@ export const ADOFDashboard: React.FC = () => {
         );
       case 'personality-test':
         return (
-          <ADOFTestDisplay 
+          <ADOFTestDisplay
             selectedJob={selectedJob!}
             cvData={cvData!}
             userId={user?.id || ''}
@@ -193,7 +192,7 @@ export const ADOFDashboard: React.FC = () => {
         );
       case 'report':
         return (
-          <ADOFReports 
+          <ADOFReports
             selectedJob={selectedJob!}
             cvData={cvData!}
             academicTestResults={academicTestResults}
@@ -216,9 +215,9 @@ export const ADOFDashboard: React.FC = () => {
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                 <BookOpen className="w-4 h-4 text-primary-foreground" />
               </div>
-              <h1 className="text-xl font-bold text-foreground">JobFinder - ADOF</h1>
+              <h1 className="text-xl font-bold text-foreground">Fit Finder - ADOF</h1>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                 <User className="w-4 h-4" />

@@ -56,7 +56,7 @@ export const Footer: React.FC<FooterProps> = ({
           {/* Brand Column */}
           <div className="lg:col-span-2">
             <a href="#" className="flex items-center gap-2 mb-4">
-              <img src="/logo.jpeg" alt="JobFinder" className="h-10 w-auto object-contain rounded-lg" />
+              <img src="/logo.jpeg" alt="Fit Finder" className="h-10 w-auto object-contain rounded-lg" />
             </a>
             <p className="text-muted-foreground text-sm max-w-xs mb-4">
               AI-powered educational assessment platform helping TVET students
@@ -94,7 +94,7 @@ export const Footer: React.FC<FooterProps> = ({
         <div className="mt-12 pt-8 border-t border-border/50">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-muted-foreground">
-              © {currentYear} JobFinder. All rights reserved.
+              © {currentYear} Fit Finder. All rights reserved.
             </p>
             <div className="flex items-center gap-6">
               <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">

@@ -59,7 +59,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onSignIn, onSignUp }) => {
         <div className="h-16 flex items-center justify-between">
           {/* Logo */}
           <a href="#" className="flex items-center gap-2 group">
-            <img src="/logo.jpeg" alt="JobFinder" className="h-10 w-auto object-contain rounded-lg" />
+            <img src="/logo.jpeg" alt="Fit Finder" className="h-10 w-auto object-contain rounded-lg" />
 
           </a>
 
