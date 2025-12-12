@@ -10,10 +10,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { 
-  Briefcase, 
-  Users, 
-  LogOut, 
+import {
+  Briefcase,
+  Users,
+  LogOut,
   User,
   BarChart3,
   TrendingUp,
@@ -81,10 +81,10 @@ export const AdminDashboard: React.FC = () => {
       // Count pending reviews (users/candidates that haven't been reviewed yet)
       // Users with no ai_recommendation or ai_recommendation is not "Rec." (recommended)
       const pendingReviews = usersResponse.users?.filter(
-        user => !user.ai_recommendation || 
-                (user.ai_recommendation !== 'Rec.' && 
-                 user.ai_recommendation.toLowerCase() !== 'accept' &&
-                 user.ai_recommendation.toLowerCase() !== 'accepted')
+        user => !user.ai_recommendation ||
+          (user.ai_recommendation !== 'Rec.' &&
+            user.ai_recommendation.toLowerCase() !== 'accept' &&
+            user.ai_recommendation.toLowerCase() !== 'accepted')
       ).length || 0;
 
       // Set the stats with real data from APIs
@@ -111,7 +111,7 @@ export const AdminDashboard: React.FC = () => {
         pending_reviews: 0,
         recent_activity: []
       });
-      
+
       if (showToast) {
         toast({
           title: 'Error',
@@ -286,16 +286,16 @@ export const AdminDashboard: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="h-20 flex flex-col space-y-2"
                     onClick={() => setCurrentView('jobs')}
                   >
                     <Briefcase className="w-6 h-6" />
                     <span className="text-sm">Manage Jobs</span>
                   </Button>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="h-20 flex flex-col space-y-2"
                     onClick={() => setCurrentView('candidates')}
                   >
@@ -317,12 +317,10 @@ export const AdminDashboard: React.FC = () => {
         <div className="container mx-auto px-4 md:px-6 py-4 max-w-full">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <Briefcase className="w-4 h-4 text-primary-foreground" />
-              </div>
+              <img src="/logo.jpeg" alt="Fit Finder" className="h-10 w-auto object-contain rounded-lg" />
               <h1 className="text-lg md:text-xl font-bold text-foreground">Admin Dashboard</h1>
             </div>
-            
+
             <div className="flex items-center space-x-2 md:space-x-4">
               <div className="hidden sm:flex items-center space-x-2 text-sm text-muted-foreground">
                 <User className="w-4 h-4" />
@@ -348,9 +346,9 @@ export const AdminDashboard: React.FC = () => {
       {/* Main Content */}
       <div className="flex overflow-hidden h-[calc(100vh-73px)]">
         {/* Sidebar */}
-        <AdminSidebar 
-          currentView={currentView} 
-          onViewChange={setCurrentView} 
+        <AdminSidebar
+          currentView={currentView}
+          onViewChange={setCurrentView}
         />
 
         {/* Content Area */}

@@ -106,10 +106,10 @@ export const ADOFDashboard: React.FC = () => {
             return (
               <div key={step.key} className="flex items-center flex-shrink-0">
                 <div className={`flex items-center space-x-2 px-3 py-2 rounded-lg ${isCompleted
-                    ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-100'
-                    : isActive
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground'
+                  ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-100'
+                  : isActive
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground'
                   }`}>
                   <Icon className="w-4 h-4" />
                   <span className="text-xs md:text-sm font-medium whitespace-nowrap">{step.label}</span>
@@ -212,9 +212,7 @@ export const ADOFDashboard: React.FC = () => {
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <BookOpen className="w-4 h-4 text-primary-foreground" />
-              </div>
+              <img src="/logo.jpeg" alt="Fit Finder" className="h-10 w-auto object-contain rounded-lg" />
               <h1 className="text-xl font-bold text-foreground">Fit Finder - ADOF</h1>
             </div>
 
