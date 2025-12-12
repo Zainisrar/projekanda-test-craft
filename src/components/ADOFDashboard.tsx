@@ -213,7 +213,7 @@ export const ADOFDashboard: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <img src="/logo.jpeg" alt="Fit Finder" className="h-10 w-auto object-contain rounded-lg" />
-              <h1 className="text-xl font-bold text-foreground">Fit Finder - ADOF</h1>
+              <h1 className="text-xl font-bold text-foreground">ADOF</h1>
             </div>
 
             <div className="flex items-center space-x-4">
